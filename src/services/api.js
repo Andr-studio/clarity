@@ -7,6 +7,7 @@ import firebaseMilestonesAPI from './firebaseMillestones';
 import firebaseActivitiesAPI from './firebaseActivities';
 import firebaseUsersAPI from './firebaseUsers';
 import firebaseCommentsAPI from './firebaseComments';
+import firebaseStorageAPI from './firebaseStorage';
 
 // Configuración
 const USE_FIREBASE = import.meta.env.VITE_USE_FIREBASE === 'true' || true; // Por defecto usar Firebase
@@ -182,6 +183,11 @@ export const estadisticasAPI = USE_FIREBASE ? {
 };
 
 // =====================================================
+// STORAGE - Firebase Storage
+// =====================================================
+export const storageAPI = firebaseStorageAPI;
+
+// =====================================================
 // EXPORT DEFAULT - Mantener compatibilidad
 // =====================================================
 const API = {
@@ -191,7 +197,8 @@ const API = {
   hitos: hitosAPI,
   comentarios: comentariosAPI,
   actividades: actividadesAPI,
-  estadisticas: estadisticasAPI
+  estadisticas: estadisticasAPI,
+  storage: storageAPI
 };
 
 export default API;
