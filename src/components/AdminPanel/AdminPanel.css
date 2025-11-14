@@ -1,0 +1,441 @@
+.admin-panel {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Header */
+.admin-panel__header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 1.5rem 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.admin-panel__header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-panel__user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-panel__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+}
+
+.admin-panel__user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-panel__user-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: #1a202c;
+}
+
+.admin-panel__user-role {
+  font-size: 0.875rem;
+  color: #718096;
+  margin: 0.25rem 0 0;
+}
+
+.admin-panel__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.admin-panel__action-btn {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-panel__dashboard-btn {
+  background: #667eea;
+  color: white;
+}
+
+.admin-panel__dashboard-btn:hover {
+  background: #5a67d8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.admin-panel__logout-btn {
+  background: #f56565;
+  color: white;
+}
+
+.admin-panel__logout-btn:hover {
+  background: #e53e3e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 101, 101, 0.4);
+}
+
+/* Stats Cards */
+.admin-panel__stats {
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.admin-panel__stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.admin-panel__stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.admin-panel__stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.admin-panel__stat-icon--users {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.admin-panel__stat-icon--projects {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.admin-panel__stat-icon--active {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.admin-panel__stat-icon--completed {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.admin-panel__stat-content {
+  flex: 1;
+}
+
+.admin-panel__stat-label {
+  font-size: 0.875rem;
+  color: #718096;
+  margin: 0 0 0.25rem;
+}
+
+.admin-panel__stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+}
+
+/* Tabs */
+.admin-panel__tabs {
+  max-width: 1400px;
+  margin: 0 auto 2rem;
+  padding: 0 2rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.admin-panel__tab {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-panel__tab:hover {
+  background: white;
+  border-color: rgba(102, 126, 234, 0.3);
+  color: #667eea;
+}
+
+.admin-panel__tab--active {
+  background: white;
+  border-color: #667eea;
+  color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+/* Content */
+.admin-panel__content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem 2rem;
+}
+
+.admin-panel__overview {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.admin-panel__section {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.admin-panel__section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Table */
+.admin-panel__table-container {
+  overflow-x: auto;
+}
+
+.admin-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-panel__table thead {
+  background: #f7fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.admin-panel__table th {
+  padding: 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-panel__table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #2d3748;
+}
+
+.admin-panel__table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.admin-panel__table tbody tr:hover {
+  background-color: #f7fafc;
+}
+
+.admin-panel__user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-panel__user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.admin-panel__project-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-panel__project-cell strong {
+  color: #1a202c;
+}
+
+.admin-panel__project-cell small {
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+/* Badges */
+.admin-panel__role-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-panel__role-badge--admin {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.admin-panel__role-badge--cliente {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.admin-panel__role-badge--team {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.admin-panel__status-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.admin-panel__status-badge--completed {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.admin-panel__status-badge--active {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.admin-panel__status-badge--pending {
+  background: #feebc8;
+  color: #c05621;
+}
+
+/* Progress Bar */
+.admin-panel__progress-bar {
+  position: relative;
+  width: 100%;
+  height: 28px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.admin-panel__progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+}
+
+.admin-panel__progress-text {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1a202c;
+  z-index: 1;
+}
+
+/* Loading */
+.admin-panel__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: white;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-panel__loading p {
+  font-size: 1rem;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-panel__header-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .admin-panel__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-panel__tabs {
+    flex-direction: column;
+  }
+
+  .admin-panel__table {
+    font-size: 0.875rem;
+  }
+
+  .admin-panel__table th,
+  .admin-panel__table td {
+    padding: 0.75rem 0.5rem;
+  }
+}

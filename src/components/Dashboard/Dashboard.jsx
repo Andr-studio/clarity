@@ -334,6 +334,16 @@ export default function Dashboard({ user, onLogout }) {
           </div>
 
           <div className="dashboard__actions">
+            {user?.rol === 'admin' && (
+              <button
+                className="dashboard__action-btn dashboard__admin-btn"
+                onClick={() => window.location.hash = '/admin'}
+                aria-label="Panel de Administración"
+                title="Panel de Administración"
+              >
+                Panel Admin
+              </button>
+            )}
             <button
               className="dashboard__action-btn dashboard__logout-btn"
               onClick={handleLogout}

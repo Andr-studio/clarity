@@ -38,30 +38,49 @@ getAll: async (userId = null, userRol = null) => {
       console.log('📋 Proyecto encontrado:', projectData);
       
       // Filtrar según rol
-      if (userRol === 'cliente') {
+      // admin: puede ver TODOS los proyectos sin restricciones
+      // team: puede ver proyectos donde está en el equipo
+      // cliente: puede ver proyectos que creó o donde está en el equipo
+
+      if (userRol === 'admin') {
+        // Los administradores pueden ver todos los proyectos sin filtrado
+        console.log('✅ Admin tiene acceso total');
+      } else if (userRol === 'cliente') {
         // Convertir IDs a string para comparar
         const creadorIdStr = String(projectData.creador_id || projectData.creadorId);
         const userIdStr = String(userId);
-        
+
         // ✅ NUEVO: Verificar si está en el equipo
         const equipo = projectData.equipo || [];
         const estaEnEquipo = equipo.some(miembro => String(miembro.userId) === userIdStr);
         const esCreador = creadorIdStr === userIdStr;
-        
-        console.log('🔐 Verificación:', { 
-          esCreador, 
-          estaEnEquipo, 
+
+        console.log('🔐 Verificación:', {
+          esCreador,
+          estaEnEquipo,
           equipoSize: equipo.length,
-          userId: userIdStr 
+          userId: userIdStr
         });
-        
+
         // Si NO es creador Y NO está en el equipo, saltar
         if (!esCreador && !estaEnEquipo) {
           console.log('❌ Usuario no tiene acceso');
           continue;
         }
-        
+
         console.log('✅ Usuario tiene acceso');
+      } else if (userRol === 'team') {
+        // Verificar si el usuario está en el equipo del proyecto
+        const equipo = projectData.equipo || [];
+        const userIdStr = String(userId);
+        const estaEnEquipo = equipo.some(miembro => String(miembro.userId) === userIdStr);
+
+        if (!estaEnEquipo) {
+          console.log('❌ Usuario team no está en este proyecto');
+          continue;
+        }
+
+        console.log('✅ Usuario team tiene acceso');
       }
       
       // Obtener hitos
