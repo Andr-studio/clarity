@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login/Login';
 import ForgotPassword from './components/ForgotPassword/ForgotPassword';
 import Dashboard from './components/Dashboard/Dashboard';
+import AdminPanel from './components/AdminPanel/AdminPanel';
 
 
 function App() {
@@ -46,10 +47,21 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/" element={<Navigate to={currentUser ? "/dashboard" : "/login"} replace />} />
 
-<Route 
-  path="/dashboard" 
-  element={currentUser ? <Dashboard user={currentUser} onLogout={handleLogout} /> : <Navigate to="/login" replace />} 
+<Route
+  path="/dashboard"
+  element={currentUser ? <Dashboard user={currentUser} onLogout={handleLogout} /> : <Navigate to="/login" replace />}
 />
+
+      {/* Ruta protegida solo para administradores */}
+      <Route
+        path="/admin"
+        element={
+          currentUser && currentUser.rol === 'admin'
+            ? <AdminPanel user={currentUser} onLogout={handleLogout} />
+            : <Navigate to="/dashboard" replace />
+        }
+      />
+
       <Route path="*" element={<h1>404: Página no encontrada</h1>} />
     </Routes>
   );
