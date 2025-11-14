@@ -8,7 +8,9 @@ import {
   TrendingUp,
   Settings,
   Database,
-  UserCog
+  UserCog,
+  Plus,
+  X
 } from "lucide-react";
 import "./AdminPanel.css";
 import API from "../../services/api";
@@ -24,6 +26,24 @@ export default function AdminPanel({ user, onLogout }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [userFilter, setUserFilter] = useState("all");
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState("");
+  const [formData, setFormData] = useState({
+    nombre: "",
+    apellido: "",
+    correo: "",
+    contrasena: "",
+    rol: "cliente",
+  });
+  const [projectFormData, setProjectFormData] = useState({
+    nombre: "",
+    descripcion: "",
+    presupuesto: "",
+    fechaInicio: "",
+    clienteId: "",
+  });
 
   useEffect(() => {
     loadAdminData();
@@ -60,6 +80,74 @@ export default function AdminPanel({ user, onLogout }) {
 
   const handleLogout = () => {
     onLogout?.();
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      const newUser = await API.usuarios.crear({
+        ...formData,
+        avatar: `${formData.nombre.charAt(0)}${formData.apellido.charAt(0)}`.toUpperCase(),
+      });
+
+      setUsers([...users, newUser]);
+      setShowUserModal(false);
+      setFormData({
+        nombre: "",
+        apellido: "",
+        correo: "",
+        contrasena: "",
+        rol: "cliente",
+      });
+
+      // Actualizar estadísticas
+      setStats(prev => ({ ...prev, totalUsers: prev.totalUsers + 1 }));
+    } catch (error) {
+      console.error("Error creando usuario:", error);
+      alert("Error al crear usuario. Por favor intente nuevamente.");
+    }
+  };
+
+  const handleCreateProject = async (e) => {
+    e.preventDefault();
+    try {
+      const newProject = await API.proyectos.crear({
+        ...projectFormData,
+        creadorId: projectFormData.clienteId,
+        estado: "pendiente",
+        progreso: 0,
+      });
+
+      setProjects([...projects, newProject]);
+      setShowProjectModal(false);
+      setProjectFormData({
+        nombre: "",
+        descripcion: "",
+        presupuesto: "",
+        fechaInicio: "",
+        clienteId: "",
+      });
+
+      // Actualizar estadísticas
+      setStats(prev => ({ ...prev, totalProjects: prev.totalProjects + 1 }));
+    } catch (error) {
+      console.error("Error creando proyecto:", error);
+      alert("Error al crear proyecto. Por favor intente nuevamente.");
+    }
+  };
+
+  const getFilteredUsers = () => {
+    if (userFilter === "all") return users;
+    return users.filter(u => u.rol === userFilter);
+  };
+
+  const getClients = () => {
+    return users.filter(u => u.rol === "cliente");
+  };
+
+  const getFilteredProjects = () => {
+    if (!selectedClient) return projects;
+    return projects.filter(p => p.creadorId === selectedClient || p.creador_id === selectedClient);
   };
 
   const getRoleBadgeClass = (rol) => {
@@ -325,10 +413,31 @@ export default function AdminPanel({ user, onLogout }) {
 
         {activeTab === "users" && (
           <div className="admin-panel__section">
-            <h2 className="admin-panel__section-title">
-              <Users size={20} />
-              Todos los Usuarios ({users.length})
-            </h2>
+            <div className="admin-panel__section-header">
+              <h2 className="admin-panel__section-title">
+                <Users size={20} />
+                Todos los Usuarios ({getFilteredUsers().length})
+              </h2>
+              <div className="admin-panel__filters">
+                <select
+                  className="admin-panel__filter-select"
+                  value={userFilter}
+                  onChange={(e) => setUserFilter(e.target.value)}
+                >
+                  <option value="all">Todos los roles</option>
+                  <option value="admin">Administradores</option>
+                  <option value="cliente">Clientes</option>
+                  <option value="team">Team</option>
+                </select>
+                <button
+                  className="admin-panel__create-btn"
+                  onClick={() => setShowUserModal(true)}
+                >
+                  <Plus size={18} />
+                  Crear Usuario
+                </button>
+              </div>
+            </div>
             <div className="admin-panel__table-container">
               <table className="admin-panel__table">
                 <thead>
@@ -340,7 +449,7 @@ export default function AdminPanel({ user, onLogout }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u) => (
+                  {getFilteredUsers().map((u) => (
                     <tr key={u.id}>
                       <td>
                         <div className="admin-panel__user-cell">
@@ -365,10 +474,33 @@ export default function AdminPanel({ user, onLogout }) {
 
         {activeTab === "projects" && (
           <div className="admin-panel__section">
-            <h2 className="admin-panel__section-title">
-              <FolderKanban size={20} />
-              Todos los Proyectos ({projects.length})
-            </h2>
+            <div className="admin-panel__section-header">
+              <h2 className="admin-panel__section-title">
+                <FolderKanban size={20} />
+                Todos los Proyectos ({getFilteredProjects().length})
+              </h2>
+              <div className="admin-panel__filters">
+                <select
+                  className="admin-panel__filter-select"
+                  value={selectedClient}
+                  onChange={(e) => setSelectedClient(e.target.value)}
+                >
+                  <option value="">Todos los clientes</option>
+                  {getClients().map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.nombre} {client.apellido}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="admin-panel__create-btn"
+                  onClick={() => setShowProjectModal(true)}
+                >
+                  <Plus size={18} />
+                  Crear Proyecto
+                </button>
+              </div>
+            </div>
             <div className="admin-panel__table-container">
               <table className="admin-panel__table">
                 <thead>
@@ -382,7 +514,7 @@ export default function AdminPanel({ user, onLogout }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {projects.map((p) => (
+                  {getFilteredProjects().map((p) => (
                     <tr key={p.id}>
                       <td>
                         <div className="admin-panel__project-cell">
@@ -415,6 +547,182 @@ export default function AdminPanel({ user, onLogout }) {
           </div>
         )}
       </div>
+
+      {/* Modal de Crear Usuario */}
+      {showUserModal && (
+        <div className="admin-panel__modal-overlay" onClick={() => setShowUserModal(false)}>
+          <div className="admin-panel__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-panel__modal-header">
+              <h3 className="admin-panel__modal-title">
+                <UserCog size={24} />
+                Crear Nuevo Usuario
+              </h3>
+              <button
+                className="admin-panel__modal-close"
+                onClick={() => setShowUserModal(false)}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <form className="admin-panel__form" onSubmit={handleCreateUser}>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Nombre</label>
+                <input
+                  type="text"
+                  className="admin-panel__form-input"
+                  value={formData.nombre}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Apellido</label>
+                <input
+                  type="text"
+                  className="admin-panel__form-input"
+                  value={formData.apellido}
+                  onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Correo Electrónico</label>
+                <input
+                  type="email"
+                  className="admin-panel__form-input"
+                  value={formData.correo}
+                  onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Contraseña</label>
+                <input
+                  type="password"
+                  className="admin-panel__form-input"
+                  value={formData.contrasena}
+                  onChange={(e) => setFormData({ ...formData, contrasena: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Rol</label>
+                <select
+                  className="admin-panel__form-select"
+                  value={formData.rol}
+                  onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+                  required
+                >
+                  <option value="cliente">Cliente</option>
+                  <option value="team">Team</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </div>
+              <div className="admin-panel__form-actions">
+                <button
+                  type="button"
+                  className="admin-panel__btn admin-panel__btn--secondary"
+                  onClick={() => setShowUserModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="admin-panel__btn admin-panel__btn--primary">
+                  Crear Usuario
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Crear Proyecto */}
+      {showProjectModal && (
+        <div className="admin-panel__modal-overlay" onClick={() => setShowProjectModal(false)}>
+          <div className="admin-panel__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-panel__modal-header">
+              <h3 className="admin-panel__modal-title">
+                <FolderKanban size={24} />
+                Crear Nuevo Proyecto
+              </h3>
+              <button
+                className="admin-panel__modal-close"
+                onClick={() => setShowProjectModal(false)}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <form className="admin-panel__form" onSubmit={handleCreateProject}>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Cliente</label>
+                <select
+                  className="admin-panel__form-select"
+                  value={projectFormData.clienteId}
+                  onChange={(e) => setProjectFormData({ ...projectFormData, clienteId: e.target.value })}
+                  required
+                >
+                  <option value="">Seleccionar cliente</option>
+                  {getClients().map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.nombre} {client.apellido}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Nombre del Proyecto</label>
+                <input
+                  type="text"
+                  className="admin-panel__form-input"
+                  value={projectFormData.nombre}
+                  onChange={(e) => setProjectFormData({ ...projectFormData, nombre: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Descripción</label>
+                <textarea
+                  className="admin-panel__form-textarea"
+                  value={projectFormData.descripcion}
+                  onChange={(e) => setProjectFormData({ ...projectFormData, descripcion: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Presupuesto</label>
+                <input
+                  type="number"
+                  className="admin-panel__form-input"
+                  value={projectFormData.presupuesto}
+                  onChange={(e) => setProjectFormData({ ...projectFormData, presupuesto: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Fecha de Inicio</label>
+                <input
+                  type="date"
+                  className="admin-panel__form-input"
+                  value={projectFormData.fechaInicio}
+                  onChange={(e) => setProjectFormData({ ...projectFormData, fechaInicio: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-actions">
+                <button
+                  type="button"
+                  className="admin-panel__btn admin-panel__btn--secondary"
+                  onClick={() => setShowProjectModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="admin-panel__btn admin-panel__btn--primary">
+                  Crear Proyecto
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
