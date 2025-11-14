@@ -179,12 +179,16 @@ getById: async (proyectoId) => {
         descripcion: proyectoData.descripcion || '',
         estado: proyectoData.estado,
         presupuesto: proyectoData.presupuesto,
-        tecnologias: proyectoData.tecnologias.split ? 
-          proyectoData.tecnologias.split(',').map(t => t.trim()) : 
+        tecnologias: proyectoData.tecnologias.split ?
+          proyectoData.tecnologias.split(',').map(t => t.trim()) :
           proyectoData.tecnologias,
         creadorId: proyectoData.creador_id || proyectoData.creadorId,
         creadorNombre: proyectoData.creadorNombre,
         equipo: proyectoData.equipo || [],
+        clienteId: proyectoData.clienteId || null,
+        clienteNombre: proyectoData.clienteNombre || null,
+        clienteCorreo: proyectoData.clienteCorreo || null,
+        clienteEmpresa: proyectoData.clienteEmpresa || null,
         fechaCreacion: serverTimestamp()
       });
       
