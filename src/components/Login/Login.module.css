@@ -1,7 +1,7 @@
 /* --- VARIABLES DE DISEÑO "iOS 26" --- */
 :root {
   /* Paleta de colores - Modo Claro */
-  --background-light: #ffffff61;
+  --background-light: #ffffffc2;
   --form-bg-light: rgba(255, 255, 255, 0);
   --text-primary-light: #1c1c1e;
   --text-secondary-light: #6e6e73;
@@ -62,6 +62,21 @@
 .header {
   text-align: center;
   margin-bottom: 2rem;
+}
+
+.logo {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 1rem;
+  object-fit: contain;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  background-color: rgba(173, 173, 173, 0.089);
+}
+
+.logo:hover {
+  transform: scale(1.1);
+
 }
 
 .title {
@@ -162,7 +177,7 @@
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: all 0.3s ease;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -171,6 +186,7 @@
 
 .submitButton:hover {
   filter: brightness(1.1);
+  transform: scale(1.05); /* Acercar el botón al pasar el mouse */
 }
 
 .submitButton:active {

@@ -264,12 +264,10 @@
 }
 
 .quick-stat__ring-progress {
-  fill: none;
+ fill: none;
   stroke-width: 3;
   stroke-linecap: round;
-  stroke-dasharray: 157;
-  stroke-dashoffset: 39.25; /* 75% progress */
-  animation: progressRing 2s ease-in-out;
+  transition: stroke-dashoffset 1s ease-in-out; /* Animación suave */
 }
 
 .quick-stat--green .quick-stat__ring-progress {
@@ -286,15 +284,6 @@
 
 .quick-stat--purple .quick-stat__ring-progress {
   stroke: #af52de;
-}
-
-@keyframes progressRing {
-  from {
-    stroke-dashoffset: 157;
-  }
-  to {
-    stroke-dashoffset: 39.25;
-  }
 }
 
 /* --- ADAPTACIÓN A MODO OSCURO --- */

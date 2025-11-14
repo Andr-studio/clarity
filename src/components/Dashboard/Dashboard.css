@@ -150,10 +150,12 @@
   border-color: var(--error-red-light);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
+  transform: scale(1.05);
 }
 
 .dashboard__logout-btn:active {
   transform: translateY(0);
+  
 }
 
 .dashboard__logout-icon {

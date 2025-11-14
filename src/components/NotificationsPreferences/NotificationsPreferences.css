@@ -210,12 +210,13 @@
   font-size: 1rem; /* 16px */
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: all 0.3s ease;
   min-height: 50px;
 }
 
 .notifications-preferences__save-btn:hover {
   filter: brightness(1.1);
+  transform: scale(1.05); /* Acercar el botón al pasar el mouse */
 }
 
 .notifications-preferences__save-btn:active {
