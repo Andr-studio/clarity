@@ -24,6 +24,8 @@ export default function AdminPanel({ user, onLogout }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [userFilter, setUserFilter] = useState("todos");
+  const [selectedClient, setSelectedClient] = useState("todos");
 
   useEffect(() => {
     loadAdminData();
@@ -104,6 +106,20 @@ export default function AdminPanel({ user, onLogout }) {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const getFilteredUsers = () => {
+    if (userFilter === "todos") return users;
+    return users.filter(u => u.rol === userFilter);
+  };
+
+  const getFilteredProjects = () => {
+    if (selectedClient === "todos") return projects;
+    return projects.filter(p => p.creador_id === selectedClient);
+  };
+
+  const getClients = () => {
+    return users.filter(u => u.rol === "cliente");
   };
 
   if (loading) {
@@ -327,8 +343,28 @@ export default function AdminPanel({ user, onLogout }) {
           <div className="admin-panel__section">
             <h2 className="admin-panel__section-title">
               <Users size={20} />
-              Todos los Usuarios ({users.length})
+              Todos los Usuarios ({getFilteredUsers().length})
             </h2>
+            <div className="admin-panel__filter-buttons">
+              <button
+                className={`admin-panel__filter-btn ${userFilter === "todos" ? "admin-panel__filter-btn--active" : ""}`}
+                onClick={() => setUserFilter("todos")}
+              >
+                Todos
+              </button>
+              <button
+                className={`admin-panel__filter-btn ${userFilter === "cliente" ? "admin-panel__filter-btn--active" : ""}`}
+                onClick={() => setUserFilter("cliente")}
+              >
+                Clientes
+              </button>
+              <button
+                className={`admin-panel__filter-btn ${userFilter === "team" ? "admin-panel__filter-btn--active" : ""}`}
+                onClick={() => setUserFilter("team")}
+              >
+                Team
+              </button>
+            </div>
             <div className="admin-panel__table-container">
               <table className="admin-panel__table">
                 <thead>
@@ -340,7 +376,7 @@ export default function AdminPanel({ user, onLogout }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u) => (
+                  {getFilteredUsers().map((u) => (
                     <tr key={u.id}>
                       <td>
                         <div className="admin-panel__user-cell">
@@ -367,8 +403,23 @@ export default function AdminPanel({ user, onLogout }) {
           <div className="admin-panel__section">
             <h2 className="admin-panel__section-title">
               <FolderKanban size={20} />
-              Todos los Proyectos ({projects.length})
+              Todos los Proyectos ({getFilteredProjects().length})
             </h2>
+            <div className="admin-panel__client-selector">
+              <label htmlFor="client-filter">Filtrar por Cliente:</label>
+              <select
+                id="client-filter"
+                value={selectedClient}
+                onChange={(e) => setSelectedClient(e.target.value)}
+              >
+                <option value="todos">Todos los Clientes</option>
+                {getClients().map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.nombre} {client.apellido}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="admin-panel__table-container">
               <table className="admin-panel__table">
                 <thead>
@@ -382,7 +433,7 @@ export default function AdminPanel({ user, onLogout }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {projects.map((p) => (
+                  {getFilteredProjects().map((p) => (
                     <tr key={p.id}>
                       <td>
                         <div className="admin-panel__project-cell">

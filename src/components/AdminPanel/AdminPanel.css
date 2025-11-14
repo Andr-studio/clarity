@@ -14,7 +14,7 @@
 }
 
 .admin-panel__header-content {
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
@@ -96,7 +96,7 @@
 
 /* Stats Cards */
 .admin-panel__stats {
-  max-width: 1400px;
+  max-width: 100%;
   margin: 2rem auto;
   padding: 0 2rem;
   display: grid;
@@ -165,7 +165,7 @@
 
 /* Tabs */
 .admin-panel__tabs {
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto 2rem;
   padding: 0 2rem;
   display: flex;
@@ -202,7 +202,7 @@
 
 /* Content */
 .admin-panel__content {
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 2rem 2rem;
 }
@@ -228,6 +228,79 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* Filter Buttons */
+.admin-panel__filter-buttons {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-panel__filter-btn {
+  padding: 0.625rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #4a5568;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-panel__filter-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+  background: #f7fafc;
+}
+
+.admin-panel__filter-btn--active {
+  border-color: #667eea;
+  background: #667eea;
+  color: white;
+}
+
+.admin-panel__filter-btn--active:hover {
+  background: #5a67d8;
+  border-color: #5a67d8;
+}
+
+.admin-panel__client-selector {
+  margin-bottom: 1.5rem;
+}
+
+.admin-panel__client-selector label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+}
+
+.admin-panel__client-selector select {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #2d3748;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-panel__client-selector select:hover {
+  border-color: #667eea;
+}
+
+.admin-panel__client-selector select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 /* Table */
