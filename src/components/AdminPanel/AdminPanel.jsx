@@ -43,6 +43,7 @@ export default function AdminPanel({ user, onLogout }) {
     presupuesto: "",
     fechaInicio: "",
     clienteId: "",
+    equipoIds: [],
   });
 
   useEffect(() => {
@@ -117,12 +118,24 @@ export default function AdminPanel({ user, onLogout }) {
       const cliente = users.find(u => u.id === projectFormData.clienteId);
       const creadorNombre = cliente ? `${cliente.nombre} ${cliente.apellido}` : "";
 
+      // Construir el array de equipo con los usuarios seleccionados
+      const equipo = projectFormData.equipoIds.map(userId => {
+        const teamUser = users.find(u => u.id === userId);
+        return {
+          userId: userId,
+          nombre: teamUser ? `${teamUser.nombre} ${teamUser.apellido}` : "",
+          avatar: teamUser ? teamUser.avatar : "",
+          rol: "team"
+        };
+      });
+
       const newProject = await API.proyectos.crear({
         ...projectFormData,
         creadorId: projectFormData.clienteId,
         creador_id: projectFormData.clienteId,
         creadorNombre: creadorNombre,
         creador_nombre: creadorNombre,
+        equipo: equipo,
         estado: "pendiente",
         progreso: 0,
         fechaInicio: projectFormData.fechaInicio,
@@ -145,6 +158,7 @@ export default function AdminPanel({ user, onLogout }) {
         presupuesto: "",
         fechaInicio: "",
         clienteId: "",
+        equipoIds: [],
       });
 
       // Actualizar estadísticas
@@ -164,6 +178,10 @@ export default function AdminPanel({ user, onLogout }) {
 
   const getClients = () => {
     return users.filter(u => u.rol === "cliente");
+  };
+
+  const getTeamUsers = () => {
+    return users.filter(u => u.rol === "team");
   };
 
   const getFilteredProjects = () => {
@@ -756,6 +774,28 @@ export default function AdminPanel({ user, onLogout }) {
                   onChange={(e) => setProjectFormData({ ...projectFormData, fechaInicio: e.target.value })}
                   required
                 />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Equipo a Cargo (Team)</label>
+                <select
+                  multiple
+                  className="admin-panel__form-select"
+                  value={projectFormData.equipoIds}
+                  onChange={(e) => {
+                    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                    setProjectFormData({ ...projectFormData, equipoIds: selectedOptions });
+                  }}
+                  style={{ minHeight: "100px" }}
+                >
+                  {getTeamUsers().map((teamUser) => (
+                    <option key={teamUser.id} value={teamUser.id}>
+                      {teamUser.nombre} {teamUser.apellido}
+                    </option>
+                  ))}
+                </select>
+                <small style={{ color: "#6b7280", fontSize: "0.875rem", marginTop: "0.25rem", display: "block" }}>
+                  Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples usuarios
+                </small>
               </div>
               <div className="admin-panel__form-actions">
                 <button
