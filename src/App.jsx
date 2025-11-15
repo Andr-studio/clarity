@@ -39,13 +39,13 @@ function App() {
       
       
       {/* 4. AHORA ESTA LÍNEA FUNCIONARÁ CORRECTAMENTE */}
-     <Route 
-  path="/login" 
-  element={!currentUser ? <Login onLoginSuccess={handleLoginSuccess} /> : <Navigate to="/dashboard" replace />} 
+     <Route
+  path="/login"
+  element={!currentUser ? <Login onLoginSuccess={handleLoginSuccess} /> : <Navigate to={currentUser.rol === 'admin' ? "/admin" : "/dashboard"} replace />}
 />
       
       <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/" element={<Navigate to={currentUser ? "/dashboard" : "/login"} replace />} />
+      <Route path="/" element={<Navigate to={currentUser ? (currentUser.rol === 'admin' ? "/admin" : "/dashboard") : "/login"} replace />} />
 
 <Route
   path="/dashboard"
