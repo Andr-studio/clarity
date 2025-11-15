@@ -45,8 +45,17 @@ export default function TeamPanel({ user, onLogout }) {
     try {
       setLoading(true);
 
+      console.log('👤 Usuario team cargando datos:', {
+        userId: user?.id,
+        userIdType: typeof user?.id,
+        nombre: user?.nombre,
+        apellido: user?.apellido,
+        rol: user?.rol
+      });
+
       // Cargar todos los proyectos asignados al usuario team
       const userProjects = await API.proyectos.getAll(user?.id, "team");
+      console.log('📁 Proyectos obtenidos para team:', userProjects.length);
       setProjects(userProjects);
 
       // Extraer clientes únicos de los proyectos
@@ -111,7 +120,8 @@ export default function TeamPanel({ user, onLogout }) {
     try {
       const project = projects.find(p => p.id === milestoneFormData.proyectoId);
 
-      const newMilestone = await API.milestones.crear(milestoneFormData.proyectoId, {
+      const result = await API.milestones.create({
+        proyecto_id: milestoneFormData.proyectoId,
         nombre: milestoneFormData.nombre,
         descripcion: milestoneFormData.descripcion,
         fechaLimite: milestoneFormData.fechaLimite,
@@ -123,7 +133,29 @@ export default function TeamPanel({ user, onLogout }) {
         responsableAvatar: user.avatar,
         estado: "pendiente",
         progreso: 0,
+        usuario_id: user.id,
+        usuarioNombre: `${user.nombre} ${user.apellido}`,
       });
+
+      if (!result.success) {
+        throw new Error(result.message || 'Error al crear hito');
+      }
+
+      const newMilestone = {
+        id: result.hito_id,
+        proyecto_id: milestoneFormData.proyectoId,
+        nombre: milestoneFormData.nombre,
+        descripcion: milestoneFormData.descripcion,
+        fechaLimite: milestoneFormData.fechaLimite,
+        fecha_limite: milestoneFormData.fechaLimite,
+        responsableId: user.id,
+        responsable_id: user.id,
+        responsableNombre: `${user.nombre} ${user.apellido}`,
+        responsable_nombre: `${user.nombre} ${user.apellido}`,
+        responsableAvatar: user.avatar,
+        estado: "pendiente",
+        progreso: 0,
+      };
 
       setMilestones([...milestones, {
         ...newMilestone,

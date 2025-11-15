@@ -74,7 +74,24 @@ getAll: async (userId = null, userRol = null) => {
         // Verificar si el usuario está en el equipo del proyecto
         const equipo = projectData.equipo || [];
         const userIdStr = String(userId);
-        const estaEnEquipo = equipo.some(miembro => String(miembro.userId) === userIdStr);
+
+        console.log('🔍 Verificando acceso de team:', {
+          proyectoNombre: projectData.nombre,
+          proyectoId: projectData.id,
+          userId: userIdStr,
+          equipo: equipo.map(m => ({
+            userId: m.userId,
+            nombre: m.nombre,
+            rol: m.rol
+          }))
+        });
+
+        const estaEnEquipo = equipo.some(miembro => {
+          const miembroIdStr = String(miembro.userId);
+          const coincide = miembroIdStr === userIdStr;
+          console.log(`  Comparando: ${miembroIdStr} === ${userIdStr} = ${coincide}`);
+          return coincide;
+        });
 
         if (!estaEnEquipo) {
           console.log('❌ Usuario team no está en este proyecto');
