@@ -129,6 +129,14 @@ export default function AdminPanel({ user, onLogout }) {
         fecha_inicio: projectFormData.fechaInicio,
       });
 
+      console.log('✅ Proyecto creado:', {
+        id: newProject.id,
+        nombre: newProject.nombre,
+        creadorId: newProject.creadorId,
+        creador_id: newProject.creador_id,
+        clienteIdOriginal: projectFormData.clienteId
+      });
+
       setProjects([...projects, newProject]);
       setShowProjectModal(false);
       setProjectFormData({
@@ -160,7 +168,20 @@ export default function AdminPanel({ user, onLogout }) {
 
   const getFilteredProjects = () => {
     if (!selectedClient) return projects;
-    return projects.filter(p => p.creadorId === selectedClient || p.creador_id === selectedClient);
+
+    // Convertir a string para comparación consistente
+    const selectedClientStr = String(selectedClient);
+
+    return projects.filter(p => {
+      const creadorIdStr = String(p.creadorId || p.creador_id || '');
+      console.log('🔍 Comparando proyecto:', {
+        proyectoNombre: p.nombre,
+        creadorId: creadorIdStr,
+        selectedClient: selectedClientStr,
+        coincide: creadorIdStr === selectedClientStr
+      });
+      return creadorIdStr === selectedClientStr;
+    });
   };
 
   const getRoleBadgeClass = (rol) => {
