@@ -193,59 +193,125 @@ getById: async (proyectoId) => {
   // Crear nuevo proyecto
   create: async (proyectoData) => {
     try {
+      // Procesar tecnologías
+      const tecnologias = proyectoData.tecnologias?.split ?
+        proyectoData.tecnologias.split(',').map(t => t.trim()) :
+        (proyectoData.tecnologias || []);
+
+      // Obtener ID del creador
+      const creadorId = proyectoData.creador_id || proyectoData.creadorId;
+
+      // Obtener datos del creador para el nombre
+      let creadorNombre = proyectoData.creadorNombre || proyectoData.creador_nombre;
+      if (!creadorNombre && creadorId) {
+        try {
+          const creadorDoc = await getDoc(doc(db, 'usuarios', String(creadorId)));
+          if (creadorDoc.exists()) {
+            const creadorData = creadorDoc.data();
+            creadorNombre = `${creadorData.nombre} ${creadorData.apellido}`;
+          }
+        } catch (error) {
+          console.error('Error obteniendo datos del creador:', error);
+        }
+      }
+
+      // Crear documento con doble nomenclatura para compatibilidad
       const projectRef = await addDoc(collection(db, 'proyectos'), {
         nombre: proyectoData.nombre,
         descripcion: proyectoData.descripcion || '',
-        estado: proyectoData.estado,
-        presupuesto: proyectoData.presupuesto,
-        tecnologias: proyectoData.tecnologias.split ? 
-          proyectoData.tecnologias.split(',').map(t => t.trim()) : 
-          proyectoData.tecnologias,
-        creadorId: proyectoData.creador_id || proyectoData.creadorId,
-        creadorNombre: proyectoData.creadorNombre,
+        estado: proyectoData.estado || 'pendiente',
+        presupuesto: Number(proyectoData.presupuesto) || 0,
+        tecnologias: tecnologias,
+        // Doble nomenclatura para creadorId
+        creadorId: creadorId,
+        creador_id: creadorId,
+        // Doble nomenclatura para creadorNombre
+        creadorNombre: creadorNombre,
+        creador_nombre: creadorNombre,
         equipo: proyectoData.equipo || [],
-        fechaCreacion: serverTimestamp()
+        // Doble nomenclatura para fechas
+        fechaCreacion: serverTimestamp(),
+        fecha_creacion: serverTimestamp(),
+        fechaInicio: proyectoData.fechaInicio || proyectoData.fecha_inicio || null,
+        fecha_inicio: proyectoData.fechaInicio || proyectoData.fecha_inicio || null,
+        progreso: proyectoData.progreso || 0
       });
-      
-      // Registrar actividad
+
+      // Registrar actividad con doble nomenclatura
       await addDoc(collection(db, 'actividades'), {
-        usuarioId: proyectoData.creador_id || proyectoData.creadorId,
-        usuarioNombre: proyectoData.creadorNombre,
+        usuarioId: creadorId,
+        usuario_id: creadorId,
+        usuarioNombre: creadorNombre,
         descripcion: 'Creó un nuevo proyecto',
         tareaModificada: proyectoData.nombre,
+        tarea_modificada: proyectoData.nombre,
         proyectoId: projectRef.id,
+        proyecto_id: projectRef.id,
         proyectoNombre: proyectoData.nombre,
+        proyecto_nombre: proyectoData.nombre,
         fecha: serverTimestamp()
       });
-      
+
+      // Retornar el proyecto creado con su ID
       return {
-        success: true,
-        proyecto_id: projectRef.id,
-        message: 'Proyecto creado exitosamente'
+        id: projectRef.id,
+        nombre: proyectoData.nombre,
+        descripcion: proyectoData.descripcion || '',
+        estado: proyectoData.estado || 'pendiente',
+        presupuesto: Number(proyectoData.presupuesto) || 0,
+        tecnologias: tecnologias,
+        creadorId: creadorId,
+        creador_id: creadorId,
+        creadorNombre: creadorNombre,
+        creador_nombre: creadorNombre,
+        equipo: proyectoData.equipo || [],
+        progreso: proyectoData.progreso || 0
       };
-      
+
     } catch (error) {
       console.error('Error creando proyecto:', error);
-      return {
-        success: false,
-        message: error.message
-      };
+      throw new Error(error.message || 'Error al crear proyecto');
     }
+  },
+
+  // Alias para compatibilidad - método 'crear' apunta a 'create'
+  crear: async (proyectoData) => {
+    return firebaseProjectsAPI.create(proyectoData);
   },
 
   // Actualizar proyecto
   update: async (proyectoId, updates) => {
     try {
-      await updateDoc(doc(db, 'proyectos', proyectoId), {
-        ...updates,
-        fechaActualizacion: serverTimestamp()
-      });
-      
+      // Crear objeto con doble nomenclatura para campos importantes
+      const updateData = { ...updates };
+
+      // Agregar doble nomenclatura para fechas de actualización
+      updateData.fechaActualizacion = serverTimestamp();
+      updateData.fecha_actualizacion = serverTimestamp();
+
+      // Si se actualiza creadorId, actualizar ambas versiones
+      if (updates.creadorId) {
+        updateData.creador_id = updates.creadorId;
+      }
+      if (updates.creador_id) {
+        updateData.creadorId = updates.creador_id;
+      }
+
+      // Si se actualiza creadorNombre, actualizar ambas versiones
+      if (updates.creadorNombre) {
+        updateData.creador_nombre = updates.creadorNombre;
+      }
+      if (updates.creador_nombre) {
+        updateData.creadorNombre = updates.creador_nombre;
+      }
+
+      await updateDoc(doc(db, 'proyectos', proyectoId), updateData);
+
       return {
         success: true,
         message: 'Proyecto actualizado exitosamente'
       };
-      
+
     } catch (error) {
       console.error('Error actualizando proyecto:', error);
       return {
