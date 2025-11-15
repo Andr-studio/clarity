@@ -1,13 +1,14 @@
 // src/services/firebaseProjects.js
-import { 
-  collection, 
-  doc, 
-  getDocs, 
+import {
+  collection,
+  doc,
+  getDocs,
   getDoc,
-  addDoc, 
+  addDoc,
   updateDoc,
-  query, 
-  where, 
+  deleteDoc,
+  query,
+  where,
   orderBy,
   serverTimestamp
 } from 'firebase/firestore';
@@ -314,6 +315,37 @@ getById: async (proyectoId) => {
 
     } catch (error) {
       console.error('Error actualizando proyecto:', error);
+      return {
+        success: false,
+        message: error.message
+      };
+    }
+  },
+
+  // Eliminar proyecto
+  delete: async (proyectoId) => {
+    try {
+      // Eliminar el proyecto
+      await deleteDoc(doc(db, 'proyectos', proyectoId));
+
+      // Opcional: Eliminar hitos asociados
+      const milestonesSnapshot = await getDocs(
+        collection(db, 'proyectos', proyectoId, 'milestones')
+      );
+
+      const deletePromises = milestonesSnapshot.docs.map(milestoneDoc =>
+        deleteDoc(doc(db, 'proyectos', proyectoId, 'milestones', milestoneDoc.id))
+      );
+
+      await Promise.all(deletePromises);
+
+      return {
+        success: true,
+        message: 'Proyecto eliminado exitosamente'
+      };
+
+    } catch (error) {
+      console.error('Error eliminando proyecto:', error);
       return {
         success: false,
         message: error.message

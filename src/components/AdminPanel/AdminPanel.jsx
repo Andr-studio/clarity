@@ -10,7 +10,9 @@ import {
   Database,
   UserCog,
   Plus,
-  X
+  X,
+  Pencil,
+  Trash2
 } from "lucide-react";
 import "./AdminPanel.css";
 import API from "../../services/api";
@@ -29,7 +31,9 @@ export default function AdminPanel({ user, onLogout }) {
   const [userFilter, setUserFilter] = useState("all");
   const [showUserModal, setShowUserModal] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
+  const [showEditProjectModal, setShowEditProjectModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState("");
+  const [editingProject, setEditingProject] = useState(null);
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -44,6 +48,15 @@ export default function AdminPanel({ user, onLogout }) {
     fechaInicio: "",
     clienteId: "",
     equipoIds: [],
+  });
+  const [editProjectFormData, setEditProjectFormData] = useState({
+    nombre: "",
+    descripcion: "",
+    presupuesto: "",
+    fechaInicio: "",
+    clienteId: "",
+    equipoIds: [],
+    estado: "",
   });
 
   useEffect(() => {
@@ -168,6 +181,126 @@ export default function AdminPanel({ user, onLogout }) {
     } catch (error) {
       console.error("Error creando proyecto:", error);
       alert(error.message || "Error al crear proyecto. Por favor intente nuevamente.");
+    }
+  };
+
+  const handleEditProject = (project) => {
+    setEditingProject(project);
+    // Extraer los IDs del equipo actual
+    const equipoIds = (project.equipo || []).map(member => member.userId);
+
+    setEditProjectFormData({
+      nombre: project.nombre,
+      descripcion: project.descripcion,
+      presupuesto: project.presupuesto,
+      fechaInicio: project.fechaInicio || project.fecha_inicio || "",
+      clienteId: project.creadorId || project.creador_id,
+      equipoIds: equipoIds,
+      estado: project.estado,
+    });
+    setShowEditProjectModal(true);
+  };
+
+  const handleUpdateProject = async (e) => {
+    e.preventDefault();
+    try {
+      // Buscar el cliente seleccionado para obtener su nombre
+      const cliente = users.find(u => u.id === editProjectFormData.clienteId);
+      const creadorNombre = cliente ? `${cliente.nombre} ${cliente.apellido}` : "";
+
+      // Construir el array de equipo con los usuarios seleccionados
+      const equipo = editProjectFormData.equipoIds.map(userId => {
+        const teamUser = users.find(u => u.id === userId);
+        return {
+          userId: userId,
+          nombre: teamUser ? `${teamUser.nombre} ${teamUser.apellido}` : "",
+          avatar: teamUser ? teamUser.avatar : "",
+          rol: "team"
+        };
+      });
+
+      const result = await API.proyectos.update(editingProject.id, {
+        nombre: editProjectFormData.nombre,
+        descripcion: editProjectFormData.descripcion,
+        presupuesto: Number(editProjectFormData.presupuesto),
+        estado: editProjectFormData.estado,
+        fechaInicio: editProjectFormData.fechaInicio,
+        fecha_inicio: editProjectFormData.fechaInicio,
+        creadorId: editProjectFormData.clienteId,
+        creador_id: editProjectFormData.clienteId,
+        creadorNombre: creadorNombre,
+        creador_nombre: creadorNombre,
+        equipo: equipo,
+      });
+
+      if (result.success) {
+        // Actualizar el proyecto en la lista local
+        setProjects(projects.map(p =>
+          p.id === editingProject.id
+            ? {
+                ...p,
+                nombre: editProjectFormData.nombre,
+                descripcion: editProjectFormData.descripcion,
+                presupuesto: Number(editProjectFormData.presupuesto),
+                estado: editProjectFormData.estado,
+                fechaInicio: editProjectFormData.fechaInicio,
+                fecha_inicio: editProjectFormData.fechaInicio,
+                creadorId: editProjectFormData.clienteId,
+                creador_id: editProjectFormData.clienteId,
+                creadorNombre: creadorNombre,
+                creador_nombre: creadorNombre,
+                equipo: equipo,
+              }
+            : p
+        ));
+
+        setShowEditProjectModal(false);
+        setEditingProject(null);
+        alert("Proyecto actualizado exitosamente");
+      } else {
+        throw new Error(result.message);
+      }
+
+    } catch (error) {
+      console.error("Error actualizando proyecto:", error);
+      alert(error.message || "Error al actualizar proyecto. Por favor intente nuevamente.");
+    }
+  };
+
+  const handleDeleteProject = async (project) => {
+    const confirmDelete = window.confirm(
+      `¿Estás seguro de que quieres eliminar el proyecto "${project.nombre}"? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const result = await API.proyectos.delete(project.id);
+
+      if (result.success) {
+        // Eliminar el proyecto de la lista local
+        setProjects(projects.filter(p => p.id !== project.id));
+
+        // Actualizar estadísticas
+        setStats(prev => ({
+          ...prev,
+          totalProjects: prev.totalProjects - 1,
+          activeProjects: project.estado === "activo" || project.estado === "en_progreso"
+            ? prev.activeProjects - 1
+            : prev.activeProjects,
+          completedProjects: project.estado === "completado"
+            ? prev.completedProjects - 1
+            : prev.completedProjects,
+        }));
+
+        alert("Proyecto eliminado exitosamente");
+      } else {
+        throw new Error(result.message);
+      }
+
+    } catch (error) {
+      console.error("Error eliminando proyecto:", error);
+      alert(error.message || "Error al eliminar proyecto. Por favor intente nuevamente.");
     }
   };
 
@@ -578,6 +711,7 @@ export default function AdminPanel({ user, onLogout }) {
                       <th>Progreso</th>
                       <th>Presupuesto</th>
                       <th>Fecha Inicio</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -606,6 +740,24 @@ export default function AdminPanel({ user, onLogout }) {
                         </td>
                         <td>${(p.presupuesto || 0).toLocaleString()}</td>
                         <td>{formatDate(p.fechaInicio || p.fecha_inicio)}</td>
+                        <td>
+                          <div style={{ display: "flex", gap: "0.5rem" }}>
+                            <button
+                              className="admin-panel__btn admin-panel__btn--icon"
+                              onClick={() => handleEditProject(p)}
+                              title="Editar proyecto"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              className="admin-panel__btn admin-panel__btn--icon admin-panel__btn--danger"
+                              onClick={() => handleDeleteProject(p)}
+                              title="Eliminar proyecto"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -807,6 +959,131 @@ export default function AdminPanel({ user, onLogout }) {
                 </button>
                 <button type="submit" className="admin-panel__btn admin-panel__btn--primary">
                   Crear Proyecto
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Editar Proyecto */}
+      {showEditProjectModal && (
+        <div className="admin-panel__modal-overlay" onClick={() => setShowEditProjectModal(false)}>
+          <div className="admin-panel__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-panel__modal-header">
+              <h3 className="admin-panel__modal-title">
+                <Pencil size={24} />
+                Editar Proyecto
+              </h3>
+              <button
+                className="admin-panel__modal-close"
+                onClick={() => setShowEditProjectModal(false)}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <form className="admin-panel__form" onSubmit={handleUpdateProject}>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Cliente</label>
+                <select
+                  className="admin-panel__form-select"
+                  value={editProjectFormData.clienteId}
+                  onChange={(e) => setEditProjectFormData({ ...editProjectFormData, clienteId: e.target.value })}
+                  required
+                >
+                  <option value="">Seleccionar cliente</option>
+                  {getClients().map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.nombre} {client.apellido}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Nombre del Proyecto</label>
+                <input
+                  type="text"
+                  className="admin-panel__form-input"
+                  value={editProjectFormData.nombre}
+                  onChange={(e) => setEditProjectFormData({ ...editProjectFormData, nombre: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Descripción</label>
+                <textarea
+                  className="admin-panel__form-textarea"
+                  value={editProjectFormData.descripcion}
+                  onChange={(e) => setEditProjectFormData({ ...editProjectFormData, descripcion: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Estado</label>
+                <select
+                  className="admin-panel__form-select"
+                  value={editProjectFormData.estado}
+                  onChange={(e) => setEditProjectFormData({ ...editProjectFormData, estado: e.target.value })}
+                  required
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="activo">Activo</option>
+                  <option value="en_progreso">En Progreso</option>
+                  <option value="completado">Completado</option>
+                </select>
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Presupuesto</label>
+                <input
+                  type="number"
+                  className="admin-panel__form-input"
+                  value={editProjectFormData.presupuesto}
+                  onChange={(e) => setEditProjectFormData({ ...editProjectFormData, presupuesto: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Fecha de Inicio</label>
+                <input
+                  type="date"
+                  className="admin-panel__form-input"
+                  value={editProjectFormData.fechaInicio}
+                  onChange={(e) => setEditProjectFormData({ ...editProjectFormData, fechaInicio: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Equipo a Cargo (Team)</label>
+                <select
+                  multiple
+                  className="admin-panel__form-select"
+                  value={editProjectFormData.equipoIds}
+                  onChange={(e) => {
+                    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                    setEditProjectFormData({ ...editProjectFormData, equipoIds: selectedOptions });
+                  }}
+                  style={{ minHeight: "100px" }}
+                >
+                  {getTeamUsers().map((teamUser) => (
+                    <option key={teamUser.id} value={teamUser.id}>
+                      {teamUser.nombre} {teamUser.apellido}
+                    </option>
+                  ))}
+                </select>
+                <small style={{ color: "#6b7280", fontSize: "0.875rem", marginTop: "0.25rem", display: "block" }}>
+                  Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples usuarios
+                </small>
+              </div>
+              <div className="admin-panel__form-actions">
+                <button
+                  type="button"
+                  className="admin-panel__btn admin-panel__btn--secondary"
+                  onClick={() => setShowEditProjectModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="admin-panel__btn admin-panel__btn--primary">
+                  Actualizar Proyecto
                 </button>
               </div>
             </form>
