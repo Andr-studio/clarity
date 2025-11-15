@@ -134,6 +134,11 @@ export default function AdminPanel({ user, onLogout }) {
       // Construir el array de equipo con los usuarios seleccionados
       const equipo = projectFormData.equipoIds.map(userId => {
         const teamUser = users.find(u => u.id === userId);
+        console.log('📝 Agregando al equipo:', {
+          userId: userId,
+          userIdType: typeof userId,
+          teamUser: teamUser ? `${teamUser.nombre} ${teamUser.apellido}` : 'NO ENCONTRADO'
+        });
         return {
           userId: userId,
           nombre: teamUser ? `${teamUser.nombre} ${teamUser.apellido}` : "",
@@ -141,6 +146,8 @@ export default function AdminPanel({ user, onLogout }) {
           rol: "team"
         };
       });
+
+      console.log('✅ Equipo final:', equipo);
 
       const newProject = await API.proyectos.crear({
         ...projectFormData,
@@ -211,6 +218,11 @@ export default function AdminPanel({ user, onLogout }) {
       // Construir el array de equipo con los usuarios seleccionados
       const equipo = editProjectFormData.equipoIds.map(userId => {
         const teamUser = users.find(u => u.id === userId);
+        console.log('📝 Editando equipo - Agregando:', {
+          userId: userId,
+          userIdType: typeof userId,
+          teamUser: teamUser ? `${teamUser.nombre} ${teamUser.apellido}` : 'NO ENCONTRADO'
+        });
         return {
           userId: userId,
           nombre: teamUser ? `${teamUser.nombre} ${teamUser.apellido}` : "",
@@ -218,6 +230,8 @@ export default function AdminPanel({ user, onLogout }) {
           rol: "team"
         };
       });
+
+      console.log('✅ Equipo final al editar:', equipo);
 
       const result = await API.proyectos.update(editingProject.id, {
         nombre: editProjectFormData.nombre,

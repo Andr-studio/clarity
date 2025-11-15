@@ -189,6 +189,7 @@ const API = {
   usuarios: usuariosAPI,
   proyectos: proyectosAPI,
   hitos: hitosAPI,
+  milestones: hitosAPI, // Alias para compatibilidad
   comentarios: comentariosAPI,
   actividades: actividadesAPI,
   estadisticas: estadisticasAPI
