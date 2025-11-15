@@ -515,47 +515,63 @@ export default function AdminPanel({ user, onLogout }) {
               </div>
             </div>
             <div className="admin-panel__table-container">
-              <table className="admin-panel__table">
-                <thead>
-                  <tr>
-                    <th>Proyecto</th>
-                    <th>Cliente</th>
-                    <th>Estado</th>
-                    <th>Progreso</th>
-                    <th>Presupuesto</th>
-                    <th>Fecha Inicio</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getFilteredProjects().map((p) => (
-                    <tr key={p.id}>
-                      <td>
-                        <div className="admin-panel__project-cell">
-                          <strong>{p.nombre}</strong>
-                          <small>{p.descripcion}</small>
-                        </div>
-                      </td>
-                      <td>{p.creadorNombre || p.creador_nombre || "N/A"}</td>
-                      <td>
-                        <span className={`admin-panel__status-badge ${getStatusBadgeClass(p.estado)}`}>
-                          {p.estado}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="admin-panel__progress-bar">
-                          <div
-                            className="admin-panel__progress-fill"
-                            style={{ width: `${p.progreso || 0}%` }}
-                          ></div>
-                          <span className="admin-panel__progress-text">{p.progreso || 0}%</span>
-                        </div>
-                      </td>
-                      <td>${(p.presupuesto || 0).toLocaleString()}</td>
-                      <td>{formatDate(p.fechaInicio || p.fecha_inicio)}</td>
+              {getFilteredProjects().length === 0 ? (
+                <div className="admin-panel__empty-state">
+                  <FolderKanban size={48} />
+                  <h3>
+                    {selectedClient
+                      ? "Aún no le asignas un proyecto"
+                      : "No hay proyectos disponibles"}
+                  </h3>
+                  <p>
+                    {selectedClient
+                      ? "Este cliente no tiene proyectos asignados. Crea uno para comenzar."
+                      : "Crea un nuevo proyecto para comenzar."}
+                  </p>
+                </div>
+              ) : (
+                <table className="admin-panel__table">
+                  <thead>
+                    <tr>
+                      <th>Proyecto</th>
+                      <th>Cliente</th>
+                      <th>Estado</th>
+                      <th>Progreso</th>
+                      <th>Presupuesto</th>
+                      <th>Fecha Inicio</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {getFilteredProjects().map((p) => (
+                      <tr key={p.id}>
+                        <td>
+                          <div className="admin-panel__project-cell">
+                            <strong>{p.nombre}</strong>
+                            <small>{p.descripcion}</small>
+                          </div>
+                        </td>
+                        <td>{p.creadorNombre || p.creador_nombre || "N/A"}</td>
+                        <td>
+                          <span className={`admin-panel__status-badge ${getStatusBadgeClass(p.estado)}`}>
+                            {p.estado}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="admin-panel__progress-bar">
+                            <div
+                              className="admin-panel__progress-fill"
+                              style={{ width: `${p.progreso || 0}%` }}
+                            ></div>
+                            <span className="admin-panel__progress-text">{p.progreso || 0}%</span>
+                          </div>
+                        </td>
+                        <td>${(p.presupuesto || 0).toLocaleString()}</td>
+                        <td>{formatDate(p.fechaInicio || p.fecha_inicio)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         )}
