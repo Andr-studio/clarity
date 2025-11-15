@@ -4,6 +4,7 @@ import Login from './components/Login/Login';
 import ForgotPassword from './components/ForgotPassword/ForgotPassword';
 import Dashboard from './components/Dashboard/Dashboard';
 import AdminPanel from './components/AdminPanel/AdminPanel';
+import TeamPanel from './components/TeamPanel/TeamPanel';
 
 
 function App() {
@@ -41,16 +42,30 @@ function App() {
       {/* 4. AHORA ESTA LÍNEA FUNCIONARÁ CORRECTAMENTE */}
      <Route
   path="/login"
-  element={!currentUser ? <Login onLoginSuccess={handleLoginSuccess} /> : <Navigate to={currentUser.rol === 'admin' ? "/admin" : "/dashboard"} replace />}
+  element={!currentUser ? <Login onLoginSuccess={handleLoginSuccess} /> : <Navigate to={currentUser.rol === 'admin' ? "/admin" : currentUser.rol === 'team' ? "/team" : "/dashboard"} replace />}
 />
       
       <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/" element={<Navigate to={currentUser ? (currentUser.rol === 'admin' ? "/admin" : "/dashboard") : "/login"} replace />} />
+      <Route path="/" element={<Navigate to={currentUser ? (currentUser.rol === 'admin' ? "/admin" : currentUser.rol === 'team' ? "/team" : "/dashboard") : "/login"} replace />} />
 
 <Route
   path="/dashboard"
-  element={currentUser ? <Dashboard user={currentUser} onLogout={handleLogout} /> : <Navigate to="/login" replace />}
+  element={
+    currentUser && currentUser.rol === 'cliente'
+      ? <Dashboard user={currentUser} onLogout={handleLogout} />
+      : <Navigate to={currentUser ? (currentUser.rol === 'admin' ? "/admin" : "/team") : "/login"} replace />
+  }
 />
+
+      {/* Ruta protegida solo para usuarios team */}
+      <Route
+        path="/team"
+        element={
+          currentUser && currentUser.rol === 'team'
+            ? <TeamPanel user={currentUser} onLogout={handleLogout} />
+            : <Navigate to={currentUser ? (currentUser.rol === 'admin' ? "/admin" : "/dashboard") : "/login"} replace />
+        }
+      />
 
       {/* Ruta protegida solo para administradores */}
       <Route
@@ -58,7 +73,7 @@ function App() {
         element={
           currentUser && currentUser.rol === 'admin'
             ? <AdminPanel user={currentUser} onLogout={handleLogout} />
-            : <Navigate to="/dashboard" replace />
+            : <Navigate to={currentUser ? (currentUser.rol === 'team' ? "/team" : "/dashboard") : "/login"} replace />
         }
       />
 
