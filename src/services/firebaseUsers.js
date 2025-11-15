@@ -1,18 +1,95 @@
 // =====================================================
 // src/services/firebaseUsers.js
 // =====================================================
-import { 
-  collection, 
-  doc, 
-  getDocs, 
+import {
+  collection,
+  doc,
+  getDocs,
   getDoc,
-  query, 
+  addDoc,
+  setDoc,
+  query,
   where,
-  updateDoc
+  updateDoc,
+  serverTimestamp
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile
+} from 'firebase/auth';
+import { auth, db } from '../firebase';
 
 const firebaseUsersAPI = {
+  // Crear nuevo usuario
+  crear: async (userData) => {
+    try {
+      // Crear usuario en Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        userData.correo,
+        userData.contrasena
+      );
+
+      const user = userCredential.user;
+
+      // Actualizar el perfil con el nombre completo
+      await updateProfile(user, {
+        displayName: `${userData.nombre} ${userData.apellido}`
+      });
+
+      // Guardar datos adicionales en Firestore con doble nomenclatura para compatibilidad
+      const newUserData = {
+        nombre: userData.nombre,
+        apellido: userData.apellido,
+        correo: userData.correo,
+        rol: userData.rol || 'cliente',
+        avatar: userData.avatar || `${userData.nombre[0]}${userData.apellido[0]}`.toUpperCase(),
+        fechaCreacion: serverTimestamp(),
+        fecha_creacion: serverTimestamp()
+      };
+
+      await setDoc(doc(db, 'usuarios', user.uid), newUserData);
+
+      // Registrar actividad de creación de usuario
+      await addDoc(collection(db, 'actividades'), {
+        usuarioId: user.uid,
+        usuario_id: user.uid,
+        usuarioNombre: `${userData.nombre} ${userData.apellido}`,
+        avatar: newUserData.avatar,
+        descripcion: `Nuevo usuario ${userData.rol} registrado`,
+        tareaModificada: `${userData.nombre} ${userData.apellido}`,
+        tarea_modificada: `${userData.nombre} ${userData.apellido}`,
+        fecha: serverTimestamp()
+      });
+
+      return {
+        id: user.uid,
+        ...newUserData
+      };
+
+    } catch (error) {
+      console.error('Error creando usuario:', error);
+
+      let errorMessage = 'Error al crear usuario';
+
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'El correo ya está registrado';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'El formato del correo no es válido';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'La contraseña debe tener al menos 6 caracteres';
+          break;
+        default:
+          errorMessage = error.message || 'Error al crear usuario';
+      }
+
+      throw new Error(errorMessage);
+    }
+  },
+
   // Obtener todos los usuarios
   getAll: async () => {
     try {

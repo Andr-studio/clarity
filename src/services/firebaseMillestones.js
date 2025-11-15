@@ -61,10 +61,14 @@ const firebaseMilestonesAPI = {
   create: async (hitoData) => {
     try {
       const { proyecto_id, ...milestoneData } = hitoData;
-      
+
       // ✅ CORRECCIÓN: Convertir proyecto_id a string
       const projectIdStr = String(proyecto_id);
-      
+
+      const responsableId = milestoneData.responsable_id || milestoneData.responsableId || null;
+      const responsableNombre = milestoneData.responsableNombre || milestoneData.responsable_nombre || null;
+      const fechaLimite = milestoneData.fecha_limite || milestoneData.fechaLimite || null;
+
       const docRef = await addDoc(
         collection(db, 'proyectos', projectIdStr, 'milestones'),
         {
@@ -72,25 +76,37 @@ const firebaseMilestonesAPI = {
           descripcion: milestoneData.descripcion || '',
           progreso: milestoneData.progreso || 0,
           estado: milestoneData.estado || 'pendiente',
-          responsableId: milestoneData.responsable_id || null,
-          responsableNombre: milestoneData.responsableNombre || null,
+          // Doble nomenclatura para responsableId
+          responsableId: responsableId,
+          responsable_id: responsableId,
+          // Doble nomenclatura para responsableNombre
+          responsableNombre: responsableNombre,
+          responsable_nombre: responsableNombre,
           responsableAvatar: milestoneData.responsableAvatar || null,
-          fechaLimite: milestoneData.fecha_limite || null,
-          fechaCreacion: serverTimestamp()
+          // Doble nomenclatura para fechaLimite
+          fechaLimite: fechaLimite,
+          fecha_limite: fechaLimite,
+          // Doble nomenclatura para fechaCreacion
+          fechaCreacion: serverTimestamp(),
+          fecha_creacion: serverTimestamp()
         }
       );
-      
-      // Registrar actividad
+
+      // Registrar actividad con doble nomenclatura
       if (milestoneData.usuario_id) {
         await addDoc(collection(db, 'actividades'), {
           usuarioId: String(milestoneData.usuario_id),
+          usuario_id: String(milestoneData.usuario_id),
+          usuarioNombre: milestoneData.usuarioNombre || milestoneData.usuario_nombre || 'Usuario',
           descripcion: 'Creó un nuevo hito',
           tareaModificada: milestoneData.nombre,
+          tarea_modificada: milestoneData.nombre,
           proyectoId: projectIdStr,
+          proyecto_id: projectIdStr,
           fecha: serverTimestamp()
         });
       }
-      
+
       return {
         success: true,
         hito_id: docRef.id
@@ -108,30 +124,62 @@ const firebaseMilestonesAPI = {
   update: async (hitoId, hitoData) => {
     try {
       const { proyecto_id, ...updates } = hitoData;
-      
+
       // ✅ CORRECCIÓN: Convertir IDs a string
       const projectIdStr = String(proyecto_id);
       const hitoIdStr = String(hitoId);
-      
+
+      // Crear objeto con doble nomenclatura
+      const updateData = { ...updates };
+
+      // Agregar doble nomenclatura para fechas de actualización
+      updateData.fechaActualizacion = serverTimestamp();
+      updateData.fecha_actualizacion = serverTimestamp();
+
+      // Si se actualiza responsableId, actualizar ambas versiones
+      if (updates.responsableId) {
+        updateData.responsable_id = updates.responsableId;
+      }
+      if (updates.responsable_id) {
+        updateData.responsableId = updates.responsable_id;
+      }
+
+      // Si se actualiza responsableNombre, actualizar ambas versiones
+      if (updates.responsableNombre) {
+        updateData.responsable_nombre = updates.responsableNombre;
+      }
+      if (updates.responsable_nombre) {
+        updateData.responsableNombre = updates.responsable_nombre;
+      }
+
+      // Si se actualiza fechaLimite, actualizar ambas versiones
+      if (updates.fechaLimite) {
+        updateData.fecha_limite = updates.fechaLimite;
+      }
+      if (updates.fecha_limite) {
+        updateData.fechaLimite = updates.fecha_limite;
+      }
+
       await updateDoc(
         doc(db, 'proyectos', projectIdStr, 'milestones', hitoIdStr),
-        {
-          ...updates,
-          fechaActualizacion: serverTimestamp()
-        }
+        updateData
       );
-      
-      // Registrar actividad si se actualiza el progreso
+
+      // Registrar actividad si se actualiza el progreso con doble nomenclatura
       if (updates.progreso !== undefined && hitoData.usuario_id) {
         await addDoc(collection(db, 'actividades'), {
           usuarioId: String(hitoData.usuario_id),
+          usuario_id: String(hitoData.usuario_id),
+          usuarioNombre: hitoData.usuarioNombre || hitoData.usuario_nombre || 'Usuario',
           descripcion: `Actualizó el progreso al ${updates.progreso}%`,
           tareaModificada: hitoData.nombre || 'Hito',
+          tarea_modificada: hitoData.nombre || 'Hito',
           proyectoId: projectIdStr,
+          proyecto_id: projectIdStr,
           fecha: serverTimestamp()
         });
       }
-      
+
       return { success: true };
     } catch (error) {
       console.error('Error actualizando hito:', error);

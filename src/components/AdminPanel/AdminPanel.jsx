@@ -102,20 +102,31 @@ export default function AdminPanel({ user, onLogout }) {
 
       // Actualizar estadísticas
       setStats(prev => ({ ...prev, totalUsers: prev.totalUsers + 1 }));
+
+      alert("Usuario creado exitosamente");
     } catch (error) {
       console.error("Error creando usuario:", error);
-      alert("Error al crear usuario. Por favor intente nuevamente.");
+      alert(error.message || "Error al crear usuario. Por favor intente nuevamente.");
     }
   };
 
   const handleCreateProject = async (e) => {
     e.preventDefault();
     try {
+      // Buscar el cliente seleccionado para obtener su nombre
+      const cliente = users.find(u => u.id === projectFormData.clienteId);
+      const creadorNombre = cliente ? `${cliente.nombre} ${cliente.apellido}` : "";
+
       const newProject = await API.proyectos.crear({
         ...projectFormData,
         creadorId: projectFormData.clienteId,
+        creador_id: projectFormData.clienteId,
+        creadorNombre: creadorNombre,
+        creador_nombre: creadorNombre,
         estado: "pendiente",
         progreso: 0,
+        fechaInicio: projectFormData.fechaInicio,
+        fecha_inicio: projectFormData.fechaInicio,
       });
 
       setProjects([...projects, newProject]);
@@ -130,9 +141,11 @@ export default function AdminPanel({ user, onLogout }) {
 
       // Actualizar estadísticas
       setStats(prev => ({ ...prev, totalProjects: prev.totalProjects + 1 }));
+
+      alert("Proyecto creado exitosamente");
     } catch (error) {
       console.error("Error creando proyecto:", error);
-      alert("Error al crear proyecto. Por favor intente nuevamente.");
+      alert(error.message || "Error al crear proyecto. Por favor intente nuevamente.");
     }
   };
 
