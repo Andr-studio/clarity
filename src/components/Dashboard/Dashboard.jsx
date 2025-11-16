@@ -5,6 +5,7 @@ import ProgressSection from "../ProgressSection/ProgressSection";
 import RecentActivity from "../RecentActivity/RecentActivity";
 import NotificationsPreferences from "../NotificationsPreferences/NotificationsPreferences";
 import QuickStats from "../QuickStats/QuickStats";
+import MeetingNotifications from "../MeetingNotifications/MeetingNotifications";
 import "./Dashboard.css";
 import API from "../../services/api";
 
@@ -15,11 +16,6 @@ export default function Dashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [documentacion, setDocumentacion] = useState([]);
-  const [reuniones, setReuniones] = useState([]);
-  const [showMeetingModal, setShowMeetingModal] = useState(false);
-  const [selectedMeeting, setSelectedMeeting] = useState(null);
-  const [meetingObservation, setMeetingObservation] = useState("");
-  const [meetingAlternativeDate, setMeetingAlternativeDate] = useState("");
   const [multimediaPorHito, setMultimediaPorHito] = useState({});
 
   // Cargar proyectos al montar el componente
@@ -35,12 +31,6 @@ export default function Dashboard({ user, onLogout }) {
       // Usar API unificada (que usa Firebase internamente)
       const data = await API.proyectos.getAll(user?.id, user?.rol);
       setProyectos(data);
-
-      // Cargar reuniones pendientes del cliente
-      if (user?.id) {
-        const reunionesPendientes = await API.reuniones.getPendingByCliente(user.id);
-        setReuniones(reunionesPendientes);
-      }
 
       if (data.length > 0) {
         loadProyectoDetalle(data[0].id);
@@ -218,48 +208,6 @@ export default function Dashboard({ user, onLogout }) {
     const proyecto = proyectos.find((p) => p.nombre === proyectoNombre);
     if (proyecto) {
       loadProyectoDetalle(proyecto.id);
-    }
-  };
-
-  const handleOpenMeetingModal = (meeting) => {
-    setSelectedMeeting(meeting);
-    setMeetingObservation("");
-    setMeetingAlternativeDate("");
-    setShowMeetingModal(true);
-  };
-
-  const handleAcceptMeeting = async () => {
-    try {
-      await API.reuniones.accept(selectedMeeting.id);
-      setReuniones(reuniones.filter(r => r.id !== selectedMeeting.id));
-      setShowMeetingModal(false);
-      alert("Reunión aceptada exitosamente");
-    } catch (error) {
-      console.error("Error aceptando reunión:", error);
-      alert(error.message || "Error al aceptar la reunión");
-    }
-  };
-
-  const handleRejectMeeting = async () => {
-    if (!meetingObservation.trim()) {
-      alert("Por favor proporciona una observación para el rechazo");
-      return;
-    }
-
-    try {
-      await API.reuniones.reject(
-        selectedMeeting.id,
-        meetingObservation,
-        meetingAlternativeDate ? new Date(meetingAlternativeDate) : null
-      );
-      setReuniones(reuniones.filter(r => r.id !== selectedMeeting.id));
-      setShowMeetingModal(false);
-      setMeetingObservation("");
-      setMeetingAlternativeDate("");
-      alert("Reunión rechazada. El administrador recibirá tu respuesta.");
-    } catch (error) {
-      console.error("Error rechazando reunión:", error);
-      alert(error.message || "Error al rechazar la reunión");
     }
   };
 
@@ -518,70 +466,6 @@ export default function Dashboard({ user, onLogout }) {
             </div>
           )}
 
-          {/* Sección de Reuniones Pendientes */}
-          {reuniones.length > 0 && (
-            <div style={{ marginTop: "2rem", background: "white", borderRadius: "12px", padding: "1.5rem", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-              <h2 style={{ marginBottom: "1rem", fontSize: "1.25rem", fontWeight: "600" }}>
-                📅 Reuniones Pendientes
-              </h2>
-              <div style={{ display: "grid", gap: "1rem" }}>
-                {reuniones.map((reunion) => (
-                  <div
-                    key={reunion.id}
-                    style={{
-                      padding: "1rem",
-                      border: "2px solid #fbbf24",
-                      borderRadius: "8px",
-                      background: "#fffbeb",
-                    }}
-                  >
-                    <div style={{ marginBottom: "0.75rem" }}>
-                      <h4 style={{ margin: 0, fontWeight: "600", fontSize: "1rem" }}>{reunion.titulo}</h4>
-                      <p style={{ margin: "0.25rem 0 0 0", color: "#6b7280", fontSize: "0.875rem" }}>
-                        {reunion.descripcion}
-                      </p>
-                      <div style={{ marginTop: "0.5rem", display: "flex", gap: "1rem", fontSize: "0.875rem", color: "#6b7280" }}>
-                        <span>📅 {formatDate(reunion.fechaSolicitada)}</span>
-                        {reunion.proyectoNombre && <span>📁 {reunion.proyectoNombre}</span>}
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                      <button
-                        onClick={() => handleOpenMeetingModal(reunion)}
-                        style={{
-                          padding: "0.5rem 1rem",
-                          background: "#10b981",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          fontSize: "0.875rem",
-                          fontWeight: "500",
-                          cursor: "pointer",
-                        }}
-                      >
-                        ✓ Aceptar
-                      </button>
-                      <button
-                        onClick={() => handleOpenMeetingModal(reunion)}
-                        style={{
-                          padding: "0.5rem 1rem",
-                          background: "#ef4444",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          fontSize: "0.875rem",
-                          fontWeight: "500",
-                          cursor: "pointer",
-                        }}
-                      >
-                        ✗ Rechazar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Sección de Multimedia de Hitos */}
           {Object.keys(multimediaPorHito).length > 0 && (
@@ -716,129 +600,8 @@ export default function Dashboard({ user, onLogout }) {
         </div>
       </div>
 
-      {/* Modal de Gestión de Reunión */}
-      {showMeetingModal && selectedMeeting && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-          onClick={() => setShowMeetingModal(false)}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "12px",
-              padding: "2rem",
-              maxWidth: "500px",
-              width: "90%",
-              maxHeight: "90vh",
-              overflow: "auto",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.5rem" }}>
-              📅 {selectedMeeting.titulo}
-            </h3>
-            <p style={{ margin: "0 0 0.5rem 0", color: "#6b7280" }}>
-              {selectedMeeting.descripcion}
-            </p>
-            <p style={{ margin: "0 0 1.5rem 0", fontSize: "0.875rem", color: "#9ca3af" }}>
-              📅 Fecha propuesta: {formatDate(selectedMeeting.fechaSolicitada)}
-            </p>
-
-            <div style={{ marginBottom: "1.5rem" }}>
-              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-                Observación (requerido para rechazar)
-              </label>
-              <textarea
-                value={meetingObservation}
-                onChange={(e) => setMeetingObservation(e.target.value)}
-                placeholder="Explica el motivo del rechazo o confirmación..."
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "6px",
-                  fontSize: "0.875rem",
-                  minHeight: "100px",
-                  resize: "vertical",
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "1.5rem" }}>
-              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-                Fecha alternativa (opcional)
-              </label>
-              <input
-                type="datetime-local"
-                value={meetingAlternativeDate}
-                onChange={(e) => setMeetingAlternativeDate(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "6px",
-                  fontSize: "0.875rem",
-                }}
-              />
-            </div>
-
-            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => setShowMeetingModal(false)}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: "#f3f4f6",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                  cursor: "pointer",
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleRejectMeeting}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: "#ef4444",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                  cursor: "pointer",
-                }}
-              >
-                Rechazar Reunión
-              </button>
-              <button
-                onClick={handleAcceptMeeting}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: "#10b981",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                  cursor: "pointer",
-                }}
-              >
-                Aceptar Reunión
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Panel de Notificaciones de Reuniones */}
+      <MeetingNotifications userId={user?.id} />
     </div>
   );
 }
