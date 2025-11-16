@@ -3,7 +3,7 @@ import { Calendar, Clock, User } from 'lucide-react';
 import PropTypes from 'prop-types';
 import CommentButton from '../CommentButton';
 
-const CalendarView = ({ milestones, onOpenComments, getCommentCount }) => {
+const CalendarView = ({ milestones, onOpenComments, getCommentCount, multimediaPorHito = {} }) => {
   // Agrupar hitos por mes
   const groupByMonth = (milestones) => {
     const grouped = {};
@@ -102,6 +102,7 @@ CalendarView.propTypes = {
   })).isRequired,
   onOpenComments: PropTypes.func.isRequired,
   getCommentCount: PropTypes.func.isRequired,
+  multimediaPorHito: PropTypes.object,
 };
 
 export default CalendarView;

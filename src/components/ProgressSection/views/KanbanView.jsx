@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import CommentButton from '../CommentButton';
 
 
-const KanbanView = ({ milestones, onOpenComments, getCommentCount }) => {
+const KanbanView = ({ milestones, onOpenComments, getCommentCount, multimediaPorHito = {} }) => {
   const statusConfig = {
     pendiente: 'Pendiente',
     'en-progreso': 'En Progreso',
@@ -57,6 +57,7 @@ KanbanView.propTypes = {
   })).isRequired,
   onOpenComments: PropTypes.func.isRequired,
   getCommentCount: PropTypes.func.isRequired,
+  multimediaPorHito: PropTypes.object,
 };
 
 export default KanbanView;
