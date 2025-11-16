@@ -17,7 +17,7 @@ import ProgressBarView from './views/ProgressBarView';
 import TableView from './views/TableView';
 import API from '../../services/api';
 
-const ProgressSection = ({ progress, milestones, projectName, projectId, userId }) => {
+const ProgressSection = ({ progress, milestones, projectName, projectId, userId, multimediaPorHito = {} }) => {
   const [selectedView, setSelectedView] = useState('detailed');
   const [commentModal, setCommentModal] = useState({
     isOpen: false,
@@ -172,11 +172,12 @@ const ProgressSection = ({ progress, milestones, projectName, projectId, userId 
   const renderSelectedView = () => {
     const ViewComponent = viewConfig[selectedView]?.component;
     if (!ViewComponent) return null;
-    
-    return <ViewComponent 
-      milestones={milestonesWithComments} 
+
+    return <ViewComponent
+      milestones={milestonesWithComments}
       onOpenComments={handleOpenComments}
       getCommentCount={getCommentCount}
+      multimediaPorHito={multimediaPorHito}
     />;
   };
 
@@ -259,6 +260,7 @@ ProgressSection.propTypes = {
   projectName: PropTypes.string,
   projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   userId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  multimediaPorHito: PropTypes.object,
 };
 
 ProgressSection.defaultProps = {

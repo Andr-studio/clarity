@@ -4,7 +4,7 @@ import CommentButton from '../CommentButton';
 import './ProgressBarView.css';
   
 
-const ProgressBarView = ({ milestones, onOpenComments, getCommentCount }) => {
+const ProgressBarView = ({ milestones, onOpenComments, getCommentCount, multimediaPorHito = {} }) => {
    
   return (
     <div className="progress-bar-view">
@@ -47,6 +47,7 @@ ProgressBarView.propTypes = {
   })).isRequired,
   onOpenComments: PropTypes.func.isRequired,
   getCommentCount: PropTypes.func.isRequired,
+  multimediaPorHito: PropTypes.object,
 };
 
 export default ProgressBarView;

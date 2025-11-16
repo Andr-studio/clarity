@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import CommentButton from '../CommentButton';
 
-const TableView = ({ milestones, onOpenComments, getCommentCount }) => {
+const TableView = ({ milestones, onOpenComments, getCommentCount, multimediaPorHito = {} }) => {
   const [sortConfig, setSortConfig] = useState({ key: 'dueDate', direction: 'ascending' });
   
 
@@ -174,6 +174,7 @@ TableView.propTypes = {
   })).isRequired,
   onOpenComments: PropTypes.func.isRequired,
   getCommentCount: PropTypes.func.isRequired,
+  multimediaPorHito: PropTypes.object,
 };
 
 export default TableView;

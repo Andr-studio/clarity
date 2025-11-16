@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import CommentButton from '../CommentButton';
 import './CardsView.css';
 
-const CardsView = ({ milestones, onOpenComments, getCommentCount }) => {
+const CardsView = ({ milestones, onOpenComments, getCommentCount, multimediaPorHito = {} }) => {
   
   const getStatusInfo = (status) => {
     switch (status) {
@@ -69,6 +69,7 @@ CardsView.propTypes = {
   })).isRequired,
   onOpenComments: PropTypes.func.isRequired,
   getCommentCount: PropTypes.func.isRequired,
+  multimediaPorHito: PropTypes.object,
 };
 
 export default CardsView;

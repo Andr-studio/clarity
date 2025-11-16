@@ -17,7 +17,6 @@ export default function Dashboard({ user, onLogout }) {
   const [error, setError] = useState(null);
   const [documentacion, setDocumentacion] = useState([]);
   const [multimediaPorHito, setMultimediaPorHito] = useState({});
-  const [expandedMilestones, setExpandedMilestones] = useState({});
 
   // Cargar proyectos al montar el componente
   useEffect(() => {
@@ -231,13 +230,6 @@ export default function Dashboard({ user, onLogout }) {
     });
   };
 
-  const toggleMilestone = (milestoneId) => {
-    setExpandedMilestones((prev) => ({
-      ...prev,
-      [milestoneId]: !prev[milestoneId],
-    }));
-  };
-
   // Mostrar loading
   if (loading && !currentProject) {
     return (
@@ -424,6 +416,7 @@ export default function Dashboard({ user, onLogout }) {
             projectName={currentProject.name}
             projectId={currentProject.id}
             userId={user?.id}
+            multimediaPorHito={multimediaPorHito}
           />
 
           {/* Sección de Documentación */}
@@ -475,171 +468,6 @@ export default function Dashboard({ user, onLogout }) {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-
-          {/* Sección de Multimedia de Hitos */}
-          {Object.keys(multimediaPorHito).length > 0 && (
-            <div style={{ marginTop: "2rem", background: "white", borderRadius: "12px", padding: "1.5rem", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-              <h2 style={{ marginBottom: "1rem", fontSize: "1.25rem", fontWeight: "600" }}>
-                🎬 Avances Multimedia de Hitos
-              </h2>
-              <p style={{ marginBottom: "1.5rem", color: "#6b7280", fontSize: "0.875rem" }}>
-                Imágenes y videos subidos por el equipo mostrando el progreso de cada hito
-              </p>
-
-              {currentProject.milestones.map((milestone) => {
-                const multimedia = multimediaPorHito[milestone.id];
-                if (!multimedia || multimedia.length === 0) return null;
-
-                const isExpanded = expandedMilestones[milestone.id];
-
-                return (
-                  <div
-                    key={milestone.id}
-                    style={{
-                      marginBottom: "1rem",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                      background: "#f9fafb",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {/* Header del hito - Clickeable para expandir/colapsar */}
-                    <div
-                      onClick={() => toggleMilestone(milestone.id)}
-                      style={{
-                        padding: "1rem",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        background: isExpanded ? "#f3f4f6" : "white",
-                        transition: "background 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isExpanded) {
-                          e.currentTarget.style.background = "#f9fafb";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isExpanded) {
-                          e.currentTarget.style.background = "white";
-                        }
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: "600", color: "#1f2937" }}>
-                          {milestone.title}
-                        </h3>
-                        <div style={{ marginTop: "0.25rem", display: "flex", gap: "1rem", fontSize: "0.875rem", color: "#6b7280" }}>
-                          <span>👤 {milestone.assignee}</span>
-                          <span>📊 {milestone.progress}% completado</span>
-                          <span>📎 {multimedia.length} archivo{multimedia.length !== 1 ? 's' : ''}</span>
-                        </div>
-                      </div>
-                      <div style={{
-                        padding: "0.5rem",
-                        background: "#3b82f6",
-                        color: "white",
-                        borderRadius: "6px",
-                        fontSize: "0.875rem",
-                        fontWeight: "500",
-                        minWidth: "120px",
-                        textAlign: "center",
-                      }}>
-                        {isExpanded ? "▼ Ocultar" : "▶ Expandir"}
-                      </div>
-                    </div>
-
-                    {/* Contenido expandible - Lista de archivos */}
-                    {isExpanded && (
-                      <div style={{
-                        padding: "1rem",
-                        background: "white",
-                        borderTop: "1px solid #e5e7eb",
-                      }}>
-                        <div style={{
-                          display: "grid",
-                          gap: "0.75rem",
-                        }}>
-                          {multimedia.map((media) => (
-                            <div
-                              key={media.id}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                padding: "1rem",
-                                border: "1px solid #e5e7eb",
-                                borderRadius: "8px",
-                                background: "#f9fafb",
-                                transition: "box-shadow 0.2s",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.boxShadow = "none";
-                              }}
-                            >
-                              <div style={{ flex: 1 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                                  <span style={{ fontSize: "1.5rem" }}>
-                                    {media.archivoTipo?.startsWith('image/') ? '🖼️' : '🎥'}
-                                  </span>
-                                  <div>
-                                    <div style={{ fontWeight: "600", fontSize: "0.875rem", color: "#1f2937" }}>
-                                      {media.archivoNombre || 'Archivo multimedia'}
-                                    </div>
-                                    {media.descripcion && (
-                                      <div style={{ fontSize: "0.875rem", color: "#6b7280", marginTop: "0.25rem" }}>
-                                        {media.descripcion}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                <div style={{ fontSize: "0.75rem", color: "#9ca3af", display: "flex", gap: "1rem" }}>
-                                  {media.usuarioNombre && <span>📤 {media.usuarioNombre}</span>}
-                                  <span>📅 {formatDate(media.fechaCreacion)}</span>
-                                </div>
-                              </div>
-                              <a
-                                href={media.archivoUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  display: "inline-block",
-                                  padding: "0.75rem 1.5rem",
-                                  background: media.archivoTipo?.startsWith('image/') ? "#10b981" : "#8b5cf6",
-                                  color: "white",
-                                  borderRadius: "6px",
-                                  textDecoration: "none",
-                                  fontSize: "0.875rem",
-                                  fontWeight: "600",
-                                  transition: "transform 0.2s, box-shadow 0.2s",
-                                  whiteSpace: "nowrap",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform = "translateY(-1px)";
-                                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = "translateY(0)";
-                                  e.currentTarget.style.boxShadow = "none";
-                                }}
-                              >
-                                {media.archivoTipo?.startsWith('image/') ? '🖼️ Ver imagen' : '🎥 Ver video'}
-                              </a>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
             </div>
           )}
         </div>
