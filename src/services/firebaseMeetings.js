@@ -250,6 +250,36 @@ export const firebaseMeetingsAPI = {
       console.error('Error al obtener reuniones del admin:', error);
       throw new Error('Error al obtener reuniones del admin: ' + error.message);
     }
+  },
+
+  /**
+   * Obtiene todas las reuniones de un cliente (pendientes, aceptadas y rechazadas)
+   * @param {string} clienteId - ID del cliente
+   * @returns {Promise<Array>} - Array de reuniones
+   */
+  async getByCliente(clienteId) {
+    try {
+      const reunionesRef = collection(db, 'reuniones');
+      const q = query(
+        reunionesRef,
+        where('clienteId', '==', clienteId),
+        orderBy('fechaSolicitada', 'desc')
+      );
+
+      const snapshot = await getDocs(q);
+
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        fechaSolicitada: doc.data().fechaSolicitada?.toDate(),
+        fechaAlternativa: doc.data().fechaAlternativa?.toDate(),
+        fechaCreacion: doc.data().fechaCreacion?.toDate(),
+        fechaActualizacion: doc.data().fechaActualizacion?.toDate()
+      }));
+    } catch (error) {
+      console.error('Error al obtener reuniones del cliente:', error);
+      throw new Error('Error al obtener reuniones del cliente: ' + error.message);
+    }
   }
 };
 
