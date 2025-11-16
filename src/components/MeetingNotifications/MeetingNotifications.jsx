@@ -10,7 +10,11 @@ export default function MeetingNotifications({ userId }) {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [meetingObservation, setMeetingObservation] = useState("");
   const [meetingAlternativeDate, setMeetingAlternativeDate] = useState("");
-  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Iniciar colapsado en móviles
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return window.innerWidth <= 768;
+  });
 
   useEffect(() => {
     if (userId) {
@@ -135,6 +139,12 @@ export default function MeetingNotifications({ userId }) {
 
   return (
     <>
+      {/* Backdrop para cerrar el panel en móviles */}
+      <div
+        className={`meeting-notifications-backdrop ${isCollapsed ? "hidden" : ""}`}
+        onClick={() => setIsCollapsed(true)}
+      />
+
       <div className={`meeting-notifications ${isCollapsed ? "collapsed" : ""}`}>
         <div className="meeting-notifications__header">
           <div className="meeting-notifications__header-content">
