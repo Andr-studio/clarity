@@ -237,22 +237,19 @@ getById: async (proyectoId) => {
       const projectRef = await addDoc(collection(db, 'proyectos'), {
         nombre: proyectoData.nombre,
         descripcion: proyectoData.descripcion || '',
-        estado: proyectoData.estado || 'pendiente',
-        presupuesto: Number(proyectoData.presupuesto) || 0,
-        tecnologias: tecnologias,
-        // Doble nomenclatura para creadorId
-        creadorId: creadorId,
-        creador_id: creadorId,
-        // Doble nomenclatura para creadorNombre
-        creadorNombre: creadorNombre,
-        creador_nombre: creadorNombre,
+        estado: proyectoData.estado,
+        presupuesto: proyectoData.presupuesto,
+        tecnologias: proyectoData.tecnologias.split ?
+          proyectoData.tecnologias.split(',').map(t => t.trim()) :
+          proyectoData.tecnologias,
+        creadorId: proyectoData.creador_id || proyectoData.creadorId,
+        creadorNombre: proyectoData.creadorNombre,
         equipo: proyectoData.equipo || [],
-        // Doble nomenclatura para fechas
-        fechaCreacion: serverTimestamp(),
-        fecha_creacion: serverTimestamp(),
-        fechaInicio: proyectoData.fechaInicio || proyectoData.fecha_inicio || null,
-        fecha_inicio: proyectoData.fechaInicio || proyectoData.fecha_inicio || null,
-        progreso: proyectoData.progreso || 0
+        clienteId: proyectoData.clienteId || null,
+        clienteNombre: proyectoData.clienteNombre || null,
+        clienteCorreo: proyectoData.clienteCorreo || null,
+        clienteEmpresa: proyectoData.clienteEmpresa || null,
+        fechaCreacion: serverTimestamp()
       });
 
       // Registrar actividad con doble nomenclatura
