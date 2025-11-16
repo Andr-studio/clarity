@@ -38,10 +38,15 @@ const app = initializeApp(firebaseConfig);
 // });
 console.warn('⚠️ APP CHECK DESACTIVADO - SOLO PARA DIAGNÓSTICO');
 
-// Inicializar Analytics (opcional)
+// Inicializar Analytics (opcional) con manejo de errores para bloqueadores de anuncios
 let analytics = null;
 if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
-  analytics = getAnalytics(app);
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    // Analytics bloqueado por extensión del navegador (AdBlocker, etc.)
+    console.info('ℹ️ Firebase Analytics no está disponible (posiblemente bloqueado por extensión del navegador). La aplicación funcionará normalmente sin analytics.');
+  }
 }
 
 // Inicializar servicios

@@ -54,11 +54,13 @@ const firebaseCommentsAPI = {
   create: async (commentData) => {
     try {
       const { projectId, milestoneId, usuario_id, usuarioNombre, usuarioAvatar, comentario, parent_id } = commentData;
-      
+
       const commentsRef = collection(db, 'proyectos', String(projectId), 'milestones', String(milestoneId), 'comentarios');
-      
+
       const docRef = await addDoc(commentsRef, {
+        // Doble nomenclatura para usuarioId
         usuarioId: usuario_id,
+        usuario_id: usuario_id,
         usuarioNombre: usuarioNombre,
         avatar: usuarioAvatar,
         author: usuarioNombre,
@@ -67,17 +69,21 @@ const firebaseCommentsAPI = {
         editado: false,
         fecha: serverTimestamp()
       });
-      
-      // Registrar actividad
+
+      // Registrar actividad con doble nomenclatura
       await addDoc(collection(db, 'actividades'), {
         usuarioId: usuario_id,
+        usuario_id: usuario_id,
         usuarioNombre: usuarioNombre,
+        avatar: usuarioAvatar,
         descripcion: parent_id ? 'Respondió a un comentario' : 'Agregó un comentario',
         tareaModificada: 'Comentario en hito',
+        tarea_modificada: 'Comentario en hito',
         proyectoId: String(projectId),
+        proyecto_id: String(projectId),
         fecha: serverTimestamp()
       });
-      
+
       return {
         success: true,
         comentario_id: docRef.id

@@ -1,13 +1,14 @@
 // src/services/firebaseProjects.js
-import { 
-  collection, 
-  doc, 
-  getDocs, 
+import {
+  collection,
+  doc,
+  getDocs,
   getDoc,
-  addDoc, 
+  addDoc,
   updateDoc,
-  query, 
-  where, 
+  deleteDoc,
+  query,
+  where,
   orderBy,
   serverTimestamp
 } from 'firebase/firestore';
@@ -38,30 +39,66 @@ getAll: async (userId = null, userRol = null) => {
       console.log('📋 Proyecto encontrado:', projectData);
       
       // Filtrar según rol
-      if (userRol === 'cliente') {
+      // admin: puede ver TODOS los proyectos sin restricciones
+      // team: puede ver proyectos donde está en el equipo
+      // cliente: puede ver proyectos que creó o donde está en el equipo
+
+      if (userRol === 'admin') {
+        // Los administradores pueden ver todos los proyectos sin filtrado
+        console.log('✅ Admin tiene acceso total');
+      } else if (userRol === 'cliente') {
         // Convertir IDs a string para comparar
         const creadorIdStr = String(projectData.creador_id || projectData.creadorId);
         const userIdStr = String(userId);
-        
+
         // ✅ NUEVO: Verificar si está en el equipo
         const equipo = projectData.equipo || [];
         const estaEnEquipo = equipo.some(miembro => String(miembro.userId) === userIdStr);
         const esCreador = creadorIdStr === userIdStr;
-        
-        console.log('🔐 Verificación:', { 
-          esCreador, 
-          estaEnEquipo, 
+
+        console.log('🔐 Verificación:', {
+          esCreador,
+          estaEnEquipo,
           equipoSize: equipo.length,
-          userId: userIdStr 
+          userId: userIdStr
         });
-        
+
         // Si NO es creador Y NO está en el equipo, saltar
         if (!esCreador && !estaEnEquipo) {
           console.log('❌ Usuario no tiene acceso');
           continue;
         }
-        
+
         console.log('✅ Usuario tiene acceso');
+      } else if (userRol === 'team') {
+        // Verificar si el usuario está en el equipo del proyecto
+        const equipo = projectData.equipo || [];
+        const userIdStr = String(userId);
+
+        console.log('🔍 Verificando acceso de team:', {
+          proyectoNombre: projectData.nombre,
+          proyectoId: projectData.id,
+          userId: userIdStr,
+          equipo: equipo.map(m => ({
+            userId: m.userId,
+            nombre: m.nombre,
+            rol: m.rol
+          }))
+        });
+
+        const estaEnEquipo = equipo.some(miembro => {
+          const miembroIdStr = String(miembro.userId);
+          const coincide = miembroIdStr === userIdStr;
+          console.log(`  Comparando: ${miembroIdStr} === ${userIdStr} = ${coincide}`);
+          return coincide;
+        });
+
+        if (!estaEnEquipo) {
+          console.log('❌ Usuario team no está en este proyecto');
+          continue;
+        }
+
+        console.log('✅ Usuario team tiene acceso');
       }
       
       // Obtener hitos
@@ -174,6 +211,29 @@ getById: async (proyectoId) => {
   // Crear nuevo proyecto
   create: async (proyectoData) => {
     try {
+      // Procesar tecnologías
+      const tecnologias = proyectoData.tecnologias?.split ?
+        proyectoData.tecnologias.split(',').map(t => t.trim()) :
+        (proyectoData.tecnologias || []);
+
+      // Obtener ID del creador
+      const creadorId = proyectoData.creador_id || proyectoData.creadorId;
+
+      // Obtener datos del creador para el nombre
+      let creadorNombre = proyectoData.creadorNombre || proyectoData.creador_nombre;
+      if (!creadorNombre && creadorId) {
+        try {
+          const creadorDoc = await getDoc(doc(db, 'usuarios', String(creadorId)));
+          if (creadorDoc.exists()) {
+            const creadorData = creadorDoc.data();
+            creadorNombre = `${creadorData.nombre} ${creadorData.apellido}`;
+          }
+        } catch (error) {
+          console.error('Error obteniendo datos del creador:', error);
+        }
+      }
+
+      // Crear documento con doble nomenclatura para compatibilidad
       const projectRef = await addDoc(collection(db, 'proyectos'), {
         nombre: proyectoData.nombre,
         descripcion: proyectoData.descripcion || '',
@@ -191,26 +251,84 @@ getById: async (proyectoId) => {
         clienteEmpresa: proyectoData.clienteEmpresa || null,
         fechaCreacion: serverTimestamp()
       });
-      
-      // Registrar actividad
+
+      // Registrar actividad con doble nomenclatura
       await addDoc(collection(db, 'actividades'), {
-        usuarioId: proyectoData.creador_id || proyectoData.creadorId,
-        usuarioNombre: proyectoData.creadorNombre,
+        usuarioId: creadorId,
+        usuario_id: creadorId,
+        usuarioNombre: creadorNombre,
         descripcion: 'Creó un nuevo proyecto',
         tareaModificada: proyectoData.nombre,
+        tarea_modificada: proyectoData.nombre,
         proyectoId: projectRef.id,
+        proyecto_id: projectRef.id,
         proyectoNombre: proyectoData.nombre,
+        proyecto_nombre: proyectoData.nombre,
         fecha: serverTimestamp()
       });
-      
+
+      // Retornar el proyecto creado con su ID
       return {
-        success: true,
-        proyecto_id: projectRef.id,
-        message: 'Proyecto creado exitosamente'
+        id: projectRef.id,
+        nombre: proyectoData.nombre,
+        descripcion: proyectoData.descripcion || '',
+        estado: proyectoData.estado || 'pendiente',
+        presupuesto: Number(proyectoData.presupuesto) || 0,
+        tecnologias: tecnologias,
+        creadorId: creadorId,
+        creador_id: creadorId,
+        creadorNombre: creadorNombre,
+        creador_nombre: creadorNombre,
+        equipo: proyectoData.equipo || [],
+        progreso: proyectoData.progreso || 0
       };
-      
+
     } catch (error) {
       console.error('Error creando proyecto:', error);
+      throw new Error(error.message || 'Error al crear proyecto');
+    }
+  },
+
+  // Alias para compatibilidad - método 'crear' apunta a 'create'
+  crear: async (proyectoData) => {
+    return firebaseProjectsAPI.create(proyectoData);
+  },
+
+  // Actualizar proyecto
+  update: async (proyectoId, updates) => {
+    try {
+      // Crear objeto con doble nomenclatura para campos importantes
+      const updateData = { ...updates };
+
+      // Agregar doble nomenclatura para fechas de actualización
+      updateData.fechaActualizacion = serverTimestamp();
+      updateData.fecha_actualizacion = serverTimestamp();
+
+      // Si se actualiza creadorId, actualizar ambas versiones
+      if (updates.creadorId) {
+        updateData.creador_id = updates.creadorId;
+      }
+      if (updates.creador_id) {
+        updateData.creadorId = updates.creador_id;
+      }
+
+      // Si se actualiza creadorNombre, actualizar ambas versiones
+      if (updates.creadorNombre) {
+        updateData.creador_nombre = updates.creadorNombre;
+      }
+      if (updates.creador_nombre) {
+        updateData.creadorNombre = updates.creador_nombre;
+      }
+
+      await updateDoc(doc(db, 'proyectos', proyectoId), updateData);
+
+      return {
+        success: true,
+        message: 'Proyecto actualizado exitosamente'
+      };
+
+    } catch (error) {
+      console.error('Error actualizando proyecto:', error);
       return {
         success: false,
         message: error.message
@@ -218,21 +336,30 @@ getById: async (proyectoId) => {
     }
   },
 
-  // Actualizar proyecto
-  update: async (proyectoId, updates) => {
+  // Eliminar proyecto
+  delete: async (proyectoId) => {
     try {
-      await updateDoc(doc(db, 'proyectos', proyectoId), {
-        ...updates,
-        fechaActualizacion: serverTimestamp()
-      });
-      
+      // Eliminar el proyecto
+      await deleteDoc(doc(db, 'proyectos', proyectoId));
+
+      // Opcional: Eliminar hitos asociados
+      const milestonesSnapshot = await getDocs(
+        collection(db, 'proyectos', proyectoId, 'milestones')
+      );
+
+      const deletePromises = milestonesSnapshot.docs.map(milestoneDoc =>
+        deleteDoc(doc(db, 'proyectos', proyectoId, 'milestones', milestoneDoc.id))
+      );
+
+      await Promise.all(deletePromises);
+
       return {
         success: true,
-        message: 'Proyecto actualizado exitosamente'
+        message: 'Proyecto eliminado exitosamente'
       };
-      
+
     } catch (error) {
-      console.error('Error actualizando proyecto:', error);
+      console.error('Error eliminando proyecto:', error);
       return {
         success: false,
         message: error.message

@@ -7,6 +7,9 @@ import firebaseMilestonesAPI from './firebaseMillestones';
 import firebaseActivitiesAPI from './firebaseActivities';
 import firebaseUsersAPI from './firebaseUsers';
 import firebaseCommentsAPI from './firebaseComments';
+import firebaseDocumentationAPI from './firebaseDocumentation';
+import firebaseMeetingsAPI from './firebaseMeetings';
+import firebaseStorageAPI from './firebaseStorage';
 
 // Configuración
 const USE_FIREBASE = import.meta.env.VITE_USE_FIREBASE === 'true' || true; // Por defecto usar Firebase
@@ -182,6 +185,124 @@ export const estadisticasAPI = USE_FIREBASE ? {
 };
 
 // =====================================================
+// DOCUMENTACIÓN DE PROYECTOS
+// =====================================================
+export const documentacionAPI = USE_FIREBASE ? firebaseDocumentationAPI : {
+  getAll: async (proyectoId) => {
+    const response = await fetch(`${PYTHON_API_URL}/proyectos/${proyectoId}/documentacion`);
+    return handlePythonResponse(response);
+  },
+
+  getById: async (proyectoId, documentoId) => {
+    const response = await fetch(`${PYTHON_API_URL}/proyectos/${proyectoId}/documentacion/${documentoId}`);
+    return handlePythonResponse(response);
+  },
+
+  create: async (proyectoId, documentoData, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('titulo', documentoData.titulo);
+    formData.append('descripcion', documentoData.descripcion || '');
+    formData.append('usuarioId', documentoData.usuarioId);
+
+    const response = await fetch(`${PYTHON_API_URL}/proyectos/${proyectoId}/documentacion`, {
+      method: 'POST',
+      body: formData,
+    });
+    return handlePythonResponse(response);
+  },
+
+  delete: async (proyectoId, documentoId) => {
+    const response = await fetch(`${PYTHON_API_URL}/proyectos/${proyectoId}/documentacion/${documentoId}`, {
+      method: 'DELETE',
+    });
+    return handlePythonResponse(response);
+  }
+};
+
+// =====================================================
+// REUNIONES
+// =====================================================
+export const reunionesAPI = USE_FIREBASE ? firebaseMeetingsAPI : {
+  getAll: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.adminId) params.append('adminId', filters.adminId);
+    if (filters.clienteId) params.append('clienteId', filters.clienteId);
+    if (filters.estado) params.append('estado', filters.estado);
+
+    const response = await fetch(`${PYTHON_API_URL}/reuniones?${params}`);
+    return handlePythonResponse(response);
+  },
+
+  getById: async (reunionId) => {
+    const response = await fetch(`${PYTHON_API_URL}/reuniones/${reunionId}`);
+    return handlePythonResponse(response);
+  },
+
+  create: async (reunionData) => {
+    const response = await fetch(`${PYTHON_API_URL}/reuniones`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(reunionData),
+    });
+    return handlePythonResponse(response);
+  },
+
+  accept: async (reunionId) => {
+    const response = await fetch(`${PYTHON_API_URL}/reuniones/${reunionId}/accept`, {
+      method: 'POST',
+    });
+    return handlePythonResponse(response);
+  },
+
+  reject: async (reunionId, observacion, fechaAlternativa = null) => {
+    const response = await fetch(`${PYTHON_API_URL}/reuniones/${reunionId}/reject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ observacion, fechaAlternativa }),
+    });
+    return handlePythonResponse(response);
+  },
+
+  delete: async (reunionId) => {
+    const response = await fetch(`${PYTHON_API_URL}/reuniones/${reunionId}`, {
+      method: 'DELETE',
+    });
+    return handlePythonResponse(response);
+  },
+
+  getPendingByCliente: async (clienteId) => {
+    const response = await fetch(`${PYTHON_API_URL}/reuniones/cliente/${clienteId}/pendientes`);
+    return handlePythonResponse(response);
+  },
+
+  getByAdmin: async (adminId) => {
+    const response = await fetch(`${PYTHON_API_URL}/reuniones/admin/${adminId}`);
+    return handlePythonResponse(response);
+  }
+};
+
+// =====================================================
+// STORAGE
+// =====================================================
+export const storageAPI = USE_FIREBASE ? firebaseStorageAPI : {
+  uploadFile: async (file, path) => {
+    // Implementación placeholder para backend Python
+    throw new Error('Storage no implementado para backend Python');
+  },
+  getFileUrl: async (path) => {
+    throw new Error('Storage no implementado para backend Python');
+  },
+  deleteFile: async (path) => {
+    throw new Error('Storage no implementado para backend Python');
+  }
+};
+
+// =====================================================
 // EXPORT DEFAULT - Mantener compatibilidad
 // =====================================================
 const API = {
@@ -189,9 +310,13 @@ const API = {
   usuarios: usuariosAPI,
   proyectos: proyectosAPI,
   hitos: hitosAPI,
+  milestones: hitosAPI, // Alias para compatibilidad
   comentarios: comentariosAPI,
   actividades: actividadesAPI,
-  estadisticas: estadisticasAPI
+  estadisticas: estadisticasAPI,
+  documentacion: documentacionAPI,
+  reuniones: reunionesAPI,
+  storage: storageAPI
 };
 
 export default API;
