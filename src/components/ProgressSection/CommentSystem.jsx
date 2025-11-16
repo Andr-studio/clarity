@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, Reply } from 'lucide-react';
+import { MessageCircle, Send, Reply, Trash2 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import API from '../../services/api';
 
 // Componente de un comentario individual
-const CommentItem = ({ 
-  comment, 
+const CommentItem = ({
+  comment,
   isReply = false,
   currentUser,
   formatTimestamp,
   onReply,
   expandedComments,
-  toggleReplies
+  toggleReplies,
+  onDelete,
+  isAdmin
 }) => (
   <div className={`comment-item ${isReply ? 'comment-item--reply' : ''}`}>
     <div className="comment-item__avatar">
@@ -31,20 +33,31 @@ const CommentItem = ({
       <p className="comment-item__text">{comment.comentario}</p>
       
       <div className="comment-item__actions">
-        <button 
+        <button
           className="comment-action"
           onClick={() => onReply(comment.id)}
         >
           <Reply className="comment-action__icon" />
           Responder
         </button>
-        
+
         {comment.replies && comment.replies.length > 0 && (
-          <button 
+          <button
             className="comment-action"
             onClick={() => toggleReplies(comment.id)}
           >
             {expandedComments.has(comment.id) ? 'Ocultar' : 'Ver'} respuestas ({comment.replies.length})
+          </button>
+        )}
+
+        {isAdmin && (
+          <button
+            className="comment-action comment-action--delete"
+            onClick={() => onDelete(comment.id)}
+            style={{ color: '#ef4444' }}
+          >
+            <Trash2 className="comment-action__icon" />
+            Eliminar
           </button>
         )}
       </div>
@@ -52,15 +65,17 @@ const CommentItem = ({
       {comment.replies && comment.replies.length > 0 && expandedComments.has(comment.id) && (
         <div className="comment-replies">
           {comment.replies.map(reply => (
-            <CommentItem 
-              key={reply.id} 
-              comment={reply} 
+            <CommentItem
+              key={reply.id}
+              comment={reply}
               isReply={true}
               currentUser={currentUser}
               formatTimestamp={formatTimestamp}
               onReply={onReply}
               expandedComments={expandedComments}
               toggleReplies={toggleReplies}
+              onDelete={onDelete}
+              isAdmin={isAdmin}
             />
           ))}
         </div>
@@ -91,6 +106,8 @@ CommentItem.propTypes = {
   onReply: PropTypes.func.isRequired,
   expandedComments: PropTypes.instanceOf(Set).isRequired,
   toggleReplies: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  isAdmin: PropTypes.bool.isRequired,
 };
 
 CommentItem.defaultProps = { isReply: false };
@@ -116,8 +133,11 @@ const CommentSystem = ({
   const currentUser = {
     id: userId || storedUser.id,
     nombre: `${storedUser.nombre || 'Usuario'} ${storedUser.apellido || ''}`.trim(),
-    avatar: storedUser.avatar || 'U'
+    avatar: storedUser.avatar || 'U',
+    rol: storedUser.rol || 'cliente'
   };
+
+  const isAdmin = currentUser.rol === 'admin';
 
   // Cargar comentarios al abrir el modal
   useEffect(() => {
@@ -245,6 +265,29 @@ const CommentSystem = ({
     setReplyContent('');
   };
 
+  const handleDelete = async (commentId) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este comentario? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await API.comentarios.delete(projectId, milestoneId, commentId);
+
+      // Recargar comentarios
+      await loadComments();
+
+      if (onCommentAdded) {
+        onCommentAdded();
+      }
+    } catch (err) {
+      setError('Error al eliminar comentario');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="comment-system">
       <div className="comment-system__header">
@@ -278,13 +321,15 @@ const CommentSystem = ({
         ) : (
           comments.map(comment => (
             <div key={comment.id}>
-              <CommentItem 
+              <CommentItem
                 comment={comment}
                 currentUser={currentUser}
                 formatTimestamp={formatTimestamp}
                 onReply={handleReply}
                 expandedComments={expandedComments}
                 toggleReplies={toggleReplies}
+                onDelete={handleDelete}
+                isAdmin={isAdmin}
               />
               
               {replyingTo === comment.id && (

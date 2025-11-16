@@ -1,11 +1,13 @@
 // src/services/firebaseComments.js
-import { 
-  collection, 
-  addDoc, 
+import {
+  collection,
+  addDoc,
   getDocs,
   query,
   orderBy,
-  serverTimestamp 
+  serverTimestamp,
+  doc,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -90,6 +92,24 @@ const firebaseCommentsAPI = {
       };
     } catch (error) {
       console.error('Error creando comentario:', error);
+      return {
+        success: false,
+        message: error.message
+      };
+    }
+  },
+
+  // Eliminar comentario (solo admin)
+  delete: async (projectId, milestoneId, commentId) => {
+    try {
+      const commentRef = doc(db, 'proyectos', String(projectId), 'milestones', String(milestoneId), 'comentarios', String(commentId));
+      await deleteDoc(commentRef);
+
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error('Error eliminando comentario:', error);
       return {
         success: false,
         message: error.message
