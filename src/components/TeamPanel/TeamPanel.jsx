@@ -10,7 +10,13 @@ import {
   X,
   Briefcase,
   Calendar,
-  CheckCircle
+  CheckCircle,
+  Edit2,
+  Trash2,
+  Image,
+  Upload,
+  Video,
+  Eye
 } from "lucide-react";
 import "./TeamPanel.css";
 import API from "../../services/api";
@@ -30,6 +36,12 @@ export default function TeamPanel({ user, onLogout }) {
   const [selectedClient, setSelectedClient] = useState("");
   const [selectedProject, setSelectedProject] = useState("");
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showMultimediaModal, setShowMultimediaModal] = useState(false);
+  const [selectedMilestone, setSelectedMilestone] = useState(null);
+  const [multimediaFiles, setMultimediaFiles] = useState([]);
+  const [uploadingMultimedia, setUploadingMultimedia] = useState(false);
   const [milestoneFormData, setMilestoneFormData] = useState({
     nombre: "",
     descripcion: "",
@@ -178,6 +190,221 @@ export default function TeamPanel({ user, onLogout }) {
     } catch (error) {
       console.error("Error creando hito:", error);
       alert(error.message || "Error al crear hito. Por favor intente nuevamente.");
+    }
+  };
+
+  const handleEditMilestone = (milestone) => {
+    setEditingMilestone(milestone);
+    setMilestoneFormData({
+      nombre: milestone.nombre,
+      descripcion: milestone.descripcion,
+      fechaLimite: milestone.fechaLimite || milestone.fecha_limite,
+      proyectoId: milestone.proyectoId || milestone.proyecto_id,
+      progreso: milestone.progreso || 0,
+      estado: milestone.estado || "pendiente",
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateMilestone = async (e) => {
+    e.preventDefault();
+    try {
+      const result = await API.milestones.update(editingMilestone.id, {
+        proyecto_id: milestoneFormData.proyectoId,
+        nombre: milestoneFormData.nombre,
+        descripcion: milestoneFormData.descripcion,
+        fechaLimite: milestoneFormData.fechaLimite,
+        fecha_limite: milestoneFormData.fechaLimite,
+        progreso: parseInt(milestoneFormData.progreso || 0),
+        estado: milestoneFormData.estado,
+        usuario_id: user.id,
+        usuarioNombre: `${user.nombre} ${user.apellido}`,
+      });
+
+      if (!result.success) {
+        throw new Error(result.message || 'Error al actualizar hito');
+      }
+
+      // Actualizar el hito en la lista local
+      setMilestones(milestones.map(m =>
+        m.id === editingMilestone.id
+          ? { ...m, ...milestoneFormData }
+          : m
+      ));
+
+      setShowEditModal(false);
+      setEditingMilestone(null);
+      setMilestoneFormData({
+        nombre: "",
+        descripcion: "",
+        fechaLimite: "",
+        proyectoId: "",
+        progreso: 0,
+        estado: "pendiente",
+      });
+
+      alert("Hito actualizado exitosamente");
+    } catch (error) {
+      console.error("Error actualizando hito:", error);
+      alert(error.message || "Error al actualizar hito. Por favor intente nuevamente.");
+    }
+  };
+
+  const handleDeleteMilestone = async (milestone) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el hito "${milestone.nombre}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      const result = await API.milestones.delete(milestone.proyectoId, milestone.id);
+
+      if (!result.success) {
+        throw new Error(result.message || 'Error al eliminar hito');
+      }
+
+      // Eliminar el hito de la lista local
+      setMilestones(milestones.filter(m => m.id !== milestone.id));
+
+      // Actualizar estadísticas
+      setStats(prev => ({
+        ...prev,
+        totalMilestones: prev.totalMilestones - 1,
+        completedMilestones: milestone.estado === "completado"
+          ? prev.completedMilestones - 1
+          : prev.completedMilestones
+      }));
+
+      alert("Hito eliminado exitosamente");
+    } catch (error) {
+      console.error("Error eliminando hito:", error);
+      alert(error.message || "Error al eliminar hito. Por favor intente nuevamente.");
+    }
+  };
+
+  const handleUpdateProgress = async (milestone, newProgress) => {
+    try {
+      // Determinar el estado basado en el progreso
+      let newEstado = milestone.estado;
+      if (newProgress === 0) {
+        newEstado = "pendiente";
+      } else if (newProgress === 100) {
+        newEstado = "completado";
+      } else {
+        newEstado = "en_progreso";
+      }
+
+      const result = await API.milestones.update(milestone.id, {
+        proyecto_id: milestone.proyectoId,
+        progreso: parseInt(newProgress),
+        estado: newEstado,
+        usuario_id: user.id,
+        usuarioNombre: `${user.nombre} ${user.apellido}`,
+      });
+
+      if (!result.success) {
+        throw new Error(result.message || 'Error al actualizar progreso');
+      }
+
+      // Actualizar el hito en la lista local
+      setMilestones(milestones.map(m =>
+        m.id === milestone.id
+          ? { ...m, progreso: parseInt(newProgress), estado: newEstado }
+          : m
+      ));
+
+      // Actualizar estadísticas si cambió el estado
+      if (milestone.estado !== newEstado) {
+        setStats(prev => ({
+          ...prev,
+          completedMilestones: newEstado === "completado"
+            ? prev.completedMilestones + 1
+            : milestone.estado === "completado"
+              ? prev.completedMilestones - 1
+              : prev.completedMilestones
+        }));
+      }
+    } catch (error) {
+      console.error("Error actualizando progreso:", error);
+      alert(error.message || "Error al actualizar progreso. Por favor intente nuevamente.");
+    }
+  };
+
+  const handleOpenMultimediaModal = async (milestone) => {
+    setSelectedMilestone(milestone);
+    setShowMultimediaModal(true);
+
+    // Cargar archivos multimedia del hito
+    try {
+      const multimedia = await API.milestones.getMultimedia(milestone.proyectoId, milestone.id);
+      setMultimediaFiles(multimedia);
+    } catch (error) {
+      console.error("Error cargando multimedia:", error);
+      setMultimediaFiles([]);
+    }
+  };
+
+  const handleUploadMultimedia = async (e) => {
+    const files = Array.from(e.target.files);
+
+    if (files.length === 0) return;
+
+    setUploadingMultimedia(true);
+
+    try {
+      for (const file of files) {
+        const result = await API.milestones.addMultimedia(
+          selectedMilestone.proyectoId,
+          selectedMilestone.id,
+          file,
+          {
+            descripcion: `Archivo subido por ${user.nombre} ${user.apellido}`,
+            usuarioId: user.id,
+            usuarioNombre: `${user.nombre} ${user.apellido}`,
+          }
+        );
+
+        if (!result.success) {
+          throw new Error(result.message || 'Error al subir archivo');
+        }
+      }
+
+      // Recargar multimedia
+      const multimedia = await API.milestones.getMultimedia(selectedMilestone.proyectoId, selectedMilestone.id);
+      setMultimediaFiles(multimedia);
+
+      alert("Archivos subidos exitosamente");
+    } catch (error) {
+      console.error("Error subiendo multimedia:", error);
+      alert(error.message || "Error al subir archivos. Por favor intente nuevamente.");
+    } finally {
+      setUploadingMultimedia(false);
+      e.target.value = null; // Reset file input
+    }
+  };
+
+  const handleDeleteMultimedia = async (multimediaId) => {
+    if (!window.confirm("¿Estás seguro de eliminar este archivo?")) {
+      return;
+    }
+
+    try {
+      const result = await API.milestones.deleteMultimedia(
+        selectedMilestone.proyectoId,
+        selectedMilestone.id,
+        multimediaId
+      );
+
+      if (!result.success) {
+        throw new Error(result.message || 'Error al eliminar archivo');
+      }
+
+      // Actualizar lista de multimedia
+      setMultimediaFiles(multimediaFiles.filter(f => f.id !== multimediaId));
+
+      alert("Archivo eliminado exitosamente");
+    } catch (error) {
+      console.error("Error eliminando multimedia:", error);
+      alert(error.message || "Error al eliminar archivo. Por favor intente nuevamente.");
     }
   };
 
@@ -566,6 +793,7 @@ export default function TeamPanel({ user, onLogout }) {
                       <th>Progreso</th>
                       <th>Responsable</th>
                       <th>Fecha Límite</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -584,12 +812,23 @@ export default function TeamPanel({ user, onLogout }) {
                           </span>
                         </td>
                         <td>
-                          <div className="team-panel__progress-bar">
-                            <div
-                              className="team-panel__progress-fill"
-                              style={{ width: `${m.progreso || 0}%` }}
-                            ></div>
-                            <span className="team-panel__progress-text">{m.progreso || 0}%</span>
+                          <div className="team-panel__progress-container">
+                            <div className="team-panel__progress-bar">
+                              <div
+                                className="team-panel__progress-fill"
+                                style={{ width: `${m.progreso || 0}%` }}
+                              ></div>
+                              <span className="team-panel__progress-text">{m.progreso || 0}%</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={m.progreso || 0}
+                              onChange={(e) => handleUpdateProgress(m, e.target.value)}
+                              className="team-panel__progress-slider"
+                              title="Actualizar progreso"
+                            />
                           </div>
                         </td>
                         <td>
@@ -599,6 +838,31 @@ export default function TeamPanel({ user, onLogout }) {
                           </div>
                         </td>
                         <td>{formatDate(m.fechaLimite || m.fecha_limite)}</td>
+                        <td>
+                          <div className="team-panel__actions-cell">
+                            <button
+                              className="team-panel__icon-btn"
+                              onClick={() => handleEditMilestone(m)}
+                              title="Editar hito"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              className="team-panel__icon-btn"
+                              onClick={() => handleOpenMultimediaModal(m)}
+                              title="Gestionar multimedia"
+                            >
+                              <Image size={16} />
+                            </button>
+                            <button
+                              className="team-panel__icon-btn team-panel__icon-btn--danger"
+                              onClick={() => handleDeleteMilestone(m)}
+                              title="Eliminar hito"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -684,6 +948,208 @@ export default function TeamPanel({ user, onLogout }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Editar Hito */}
+      {showEditModal && editingMilestone && (
+        <div className="team-panel__modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="team-panel__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="team-panel__modal-header">
+              <h3 className="team-panel__modal-title">
+                <Edit2 size={24} />
+                Editar Hito
+              </h3>
+              <button
+                className="team-panel__modal-close"
+                onClick={() => setShowEditModal(false)}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <form className="team-panel__form" onSubmit={handleUpdateMilestone}>
+              <div className="team-panel__form-group">
+                <label className="team-panel__form-label">Proyecto</label>
+                <select
+                  className="team-panel__form-select"
+                  value={milestoneFormData.proyectoId}
+                  onChange={(e) => setMilestoneFormData({ ...milestoneFormData, proyectoId: e.target.value })}
+                  required
+                  disabled
+                >
+                  <option value="">Seleccionar proyecto</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="team-panel__form-group">
+                <label className="team-panel__form-label">Nombre del Hito</label>
+                <input
+                  type="text"
+                  className="team-panel__form-input"
+                  value={milestoneFormData.nombre}
+                  onChange={(e) => setMilestoneFormData({ ...milestoneFormData, nombre: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="team-panel__form-group">
+                <label className="team-panel__form-label">Descripción</label>
+                <textarea
+                  className="team-panel__form-textarea"
+                  value={milestoneFormData.descripcion}
+                  onChange={(e) => setMilestoneFormData({ ...milestoneFormData, descripcion: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="team-panel__form-group">
+                <label className="team-panel__form-label">Estado</label>
+                <select
+                  className="team-panel__form-select"
+                  value={milestoneFormData.estado}
+                  onChange={(e) => setMilestoneFormData({ ...milestoneFormData, estado: e.target.value })}
+                  required
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="en_progreso">En Progreso</option>
+                  <option value="completado">Completado</option>
+                </select>
+              </div>
+              <div className="team-panel__form-group">
+                <label className="team-panel__form-label">Progreso (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  className="team-panel__form-input"
+                  value={milestoneFormData.progreso}
+                  onChange={(e) => setMilestoneFormData({ ...milestoneFormData, progreso: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="team-panel__form-group">
+                <label className="team-panel__form-label">Fecha Límite</label>
+                <input
+                  type="date"
+                  className="team-panel__form-input"
+                  value={milestoneFormData.fechaLimite}
+                  onChange={(e) => setMilestoneFormData({ ...milestoneFormData, fechaLimite: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="team-panel__form-actions">
+                <button
+                  type="button"
+                  className="team-panel__btn team-panel__btn--secondary"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="team-panel__btn team-panel__btn--primary">
+                  Actualizar Hito
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Multimedia */}
+      {showMultimediaModal && selectedMilestone && (
+        <div className="team-panel__modal-overlay" onClick={() => setShowMultimediaModal(false)}>
+          <div className="team-panel__modal team-panel__modal--large" onClick={(e) => e.stopPropagation()}>
+            <div className="team-panel__modal-header">
+              <h3 className="team-panel__modal-title">
+                <Image size={24} />
+                Multimedia - {selectedMilestone.nombre}
+              </h3>
+              <button
+                className="team-panel__modal-close"
+                onClick={() => setShowMultimediaModal(false)}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="team-panel__modal-body">
+              <div className="team-panel__upload-section">
+                <label className="team-panel__upload-btn" htmlFor="multimedia-upload">
+                  <Upload size={20} />
+                  {uploadingMultimedia ? "Subiendo..." : "Subir Imágenes o Videos"}
+                  <input
+                    id="multimedia-upload"
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    onChange={handleUploadMultimedia}
+                    disabled={uploadingMultimedia}
+                    style={{ display: "none" }}
+                  />
+                </label>
+                <p className="team-panel__upload-hint">
+                  Formatos soportados: imágenes (JPG, PNG, GIF) y videos (MP4, MOV, AVI)
+                </p>
+              </div>
+
+              <div className="team-panel__multimedia-grid">
+                {multimediaFiles.length === 0 ? (
+                  <div className="team-panel__empty-state">
+                    <Image size={48} />
+                    <h3>No hay archivos multimedia</h3>
+                    <p>Sube imágenes o videos para documentar el progreso de este hito.</p>
+                  </div>
+                ) : (
+                  multimediaFiles.map((file) => (
+                    <div key={file.id} className="team-panel__multimedia-item">
+                      <div className="team-panel__multimedia-preview">
+                        {file.archivoTipo?.startsWith("image/") ? (
+                          <img
+                            src={file.archivoUrl}
+                            alt={file.archivoNombre}
+                            className="team-panel__multimedia-image"
+                          />
+                        ) : file.archivoTipo?.startsWith("video/") ? (
+                          <video
+                            src={file.archivoUrl}
+                            controls
+                            className="team-panel__multimedia-video"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="team-panel__multimedia-info">
+                        <p className="team-panel__multimedia-name">{file.archivoNombre}</p>
+                        <p className="team-panel__multimedia-date">
+                          {file.fechaCreacion
+                            ? new Date(file.fechaCreacion).toLocaleDateString("es-ES")
+                            : "N/A"}
+                        </p>
+                        <p className="team-panel__multimedia-user">{file.usuarioNombre}</p>
+                      </div>
+                      <div className="team-panel__multimedia-actions">
+                        <a
+                          href={file.archivoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="team-panel__icon-btn"
+                          title="Ver archivo"
+                        >
+                          <Eye size={16} />
+                        </a>
+                        <button
+                          className="team-panel__icon-btn team-panel__icon-btn--danger"
+                          onClick={() => handleDeleteMultimedia(file.id)}
+                          title="Eliminar archivo"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
