@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { useNavigate } from "react-router-dom";
 import ProjectHeader from "../ProjectHeader/ProjectHeader";
 import ProgressSection from "../ProgressSection/ProgressSection";
 import RecentActivity from "../RecentActivity/RecentActivity";
@@ -15,7 +14,6 @@ export default function Dashboard({ user, onLogout }) {
   const [currentProject, setCurrentProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
 
   // Cargar proyectos al montar el componente
   useEffect(() => {
@@ -185,10 +183,6 @@ export default function Dashboard({ user, onLogout }) {
     onLogout?.();
   };
 
-  const handleAdminPanel = () => {
-    navigate('/admin');
-  };
-
   const handleProjectSelect = (proyectoNombre) => {
     const proyecto = proyectos.find((p) => p.nombre === proyectoNombre);
     if (proyecto) {
@@ -259,14 +253,6 @@ export default function Dashboard({ user, onLogout }) {
               </div>
             </div>
             <div className="dashboard__actions">
-              {user?.rol === 'admin' && (
-                <button
-                  className="dashboard__action-btn dashboard__admin-btn"
-                  onClick={handleAdminPanel}
-                >
-                  Panel Admin
-                </button>
-              )}
               <button
                 className="dashboard__action-btn dashboard__logout-btn"
                 onClick={handleLogout}
@@ -309,14 +295,6 @@ export default function Dashboard({ user, onLogout }) {
               </div>
             </div>
             <div className="dashboard__actions">
-              {user?.rol === 'admin' && (
-                <button
-                  className="dashboard__action-btn dashboard__admin-btn"
-                  onClick={handleAdminPanel}
-                >
-                  Panel Admin
-                </button>
-              )}
               <button
                 className="dashboard__action-btn dashboard__logout-btn"
                 onClick={handleLogout}
@@ -359,7 +337,7 @@ export default function Dashboard({ user, onLogout }) {
             {user?.rol === 'admin' && (
               <button
                 className="dashboard__action-btn dashboard__admin-btn"
-                onClick={handleAdminPanel}
+                onClick={() => window.location.hash = '/admin'}
                 aria-label="Panel de Administración"
                 title="Panel de Administración"
               >

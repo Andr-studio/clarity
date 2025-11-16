@@ -135,24 +135,25 @@
   gap: 8px;
   padding: 10px 16px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
+  border: 1px solid transparent;
   border-radius: 25px;
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   color: white;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .dashboard__admin-btn:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+  transform: scale(1.05);
 }
 
 .dashboard__admin-btn:active {
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
 }
 
 .dashboard__logout-btn {
