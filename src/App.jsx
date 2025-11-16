@@ -4,7 +4,6 @@ import Login from './components/Login/Login';
 import ForgotPassword from './components/ForgotPassword/ForgotPassword';
 import Dashboard from './components/Dashboard/Dashboard';
 import AdminPanel from './components/AdminPanel/AdminPanel';
-import TeamPanel from './components/TeamPanel/TeamPanel';
 
 
 function App() {
@@ -50,33 +49,12 @@ function App() {
 
 <Route
   path="/dashboard"
-  element={
-    currentUser && currentUser.rol === 'cliente'
-      ? <Dashboard user={currentUser} onLogout={handleLogout} />
-      : <Navigate to={currentUser ? (currentUser.rol === 'admin' ? "/admin" : "/team") : "/login"} replace />
-  }
+  element={currentUser ? <Dashboard user={currentUser} onLogout={handleLogout} /> : <Navigate to="/login" replace />}
 />
-
-      {/* Ruta protegida solo para usuarios team */}
-      <Route
-        path="/team"
-        element={
-          currentUser && currentUser.rol === 'team'
-            ? <TeamPanel user={currentUser} onLogout={handleLogout} />
-            : <Navigate to={currentUser ? (currentUser.rol === 'admin' ? "/admin" : "/dashboard") : "/login"} replace />
-        }
-      />
-
-      {/* Ruta protegida solo para administradores */}
       <Route
         path="/admin"
-        element={
-          currentUser && currentUser.rol === 'admin'
-            ? <AdminPanel user={currentUser} onLogout={handleLogout} />
-            : <Navigate to={currentUser ? (currentUser.rol === 'team' ? "/team" : "/dashboard") : "/login"} replace />
-        }
+        element={currentUser ? <AdminPanel user={currentUser} onLogout={handleLogout} /> : <Navigate to="/login" replace />}
       />
-
       <Route path="*" element={<h1>404: Página no encontrada</h1>} />
     </Routes>
   );
