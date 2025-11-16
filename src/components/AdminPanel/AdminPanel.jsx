@@ -38,15 +38,23 @@ export default function AdminPanel({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [userFilter, setUserFilter] = useState("all");
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showEditProjectModal, setShowEditProjectModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState("");
   const [editingProject, setEditingProject] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
     correo: "",
     contrasena: "",
+    rol: "cliente",
+  });
+  const [editUserFormData, setEditUserFormData] = useState({
+    nombre: "",
+    apellido: "",
+    correo: "",
     rol: "cliente",
   });
   const [projectFormData, setProjectFormData] = useState({
@@ -201,6 +209,77 @@ export default function AdminPanel({ user, onLogout }) {
     } catch (error) {
       console.error("Error creando usuario:", error);
       alert(error.message || "Error al crear usuario. Por favor intente nuevamente.");
+    }
+  };
+
+  const handleEditUser = (userToEdit) => {
+    setEditingUser(userToEdit);
+    setEditUserFormData({
+      nombre: userToEdit.nombre,
+      apellido: userToEdit.apellido,
+      correo: userToEdit.correo,
+      rol: userToEdit.rol,
+    });
+    setShowEditUserModal(true);
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    try {
+      const updates = {
+        nombre: editUserFormData.nombre,
+        apellido: editUserFormData.apellido,
+        correo: editUserFormData.correo,
+        rol: editUserFormData.rol,
+        avatar: `${editUserFormData.nombre.charAt(0)}${editUserFormData.apellido.charAt(0)}`.toUpperCase(),
+      };
+
+      const result = await API.usuarios.update(editingUser.id, updates);
+
+      if (result.success) {
+        // Actualizar el usuario en la lista local
+        setUsers(users.map(u =>
+          u.id === editingUser.id
+            ? { ...u, ...updates }
+            : u
+        ));
+
+        setShowEditUserModal(false);
+        setEditingUser(null);
+        alert("Usuario actualizado exitosamente");
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error("Error actualizando usuario:", error);
+      alert(error.message || "Error al actualizar usuario. Por favor intente nuevamente.");
+    }
+  };
+
+  const handleDeleteUser = async (userToDelete) => {
+    const confirmDelete = window.confirm(
+      `¿Estás seguro de que quieres eliminar al usuario "${userToDelete.nombre} ${userToDelete.apellido}"? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const result = await API.usuarios.delete(userToDelete.id);
+
+      if (result.success) {
+        // Eliminar el usuario de la lista local
+        setUsers(users.filter(u => u.id !== userToDelete.id));
+
+        // Actualizar estadísticas
+        setStats(prev => ({ ...prev, totalUsers: prev.totalUsers - 1 }));
+
+        alert("Usuario eliminado exitosamente");
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error("Error eliminando usuario:", error);
+      alert(error.message || "Error al eliminar usuario. Por favor intente nuevamente.");
     }
   };
 
@@ -703,12 +782,6 @@ export default function AdminPanel({ user, onLogout }) {
 
           <div className="admin-panel__actions">
             <button
-              className="admin-panel__action-btn admin-panel__dashboard-btn"
-              onClick={() => window.location.hash = "/dashboard"}
-            >
-              Ver Dashboard
-            </button>
-            <button
               className="admin-panel__action-btn admin-panel__logout-btn"
               onClick={handleLogout}
             >
@@ -931,6 +1004,7 @@ export default function AdminPanel({ user, onLogout }) {
                     <th>Email</th>
                     <th>Rol</th>
                     <th>Fecha Registro</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -949,6 +1023,24 @@ export default function AdminPanel({ user, onLogout }) {
                         </span>
                       </td>
                       <td>{formatDate(u.fechaCreacion || u.fecha_creacion)}</td>
+                      <td>
+                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                          <button
+                            className="admin-panel__btn admin-panel__btn--icon"
+                            onClick={() => handleEditUser(u)}
+                            title="Editar usuario"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            className="admin-panel__btn admin-panel__btn--icon admin-panel__btn--danger"
+                            onClick={() => handleDeleteUser(u)}
+                            title="Eliminar usuario"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1388,6 +1480,83 @@ export default function AdminPanel({ user, onLogout }) {
                 </button>
                 <button type="submit" className="admin-panel__btn admin-panel__btn--primary">
                   Crear Usuario
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Editar Usuario */}
+      {showEditUserModal && (
+        <div className="admin-panel__modal-overlay" onClick={() => setShowEditUserModal(false)}>
+          <div className="admin-panel__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-panel__modal-header">
+              <h3 className="admin-panel__modal-title">
+                <Pencil size={24} />
+                Editar Usuario
+              </h3>
+              <button
+                className="admin-panel__modal-close"
+                onClick={() => setShowEditUserModal(false)}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <form className="admin-panel__form" onSubmit={handleUpdateUser}>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Nombre</label>
+                <input
+                  type="text"
+                  className="admin-panel__form-input"
+                  value={editUserFormData.nombre}
+                  onChange={(e) => setEditUserFormData({ ...editUserFormData, nombre: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Apellido</label>
+                <input
+                  type="text"
+                  className="admin-panel__form-input"
+                  value={editUserFormData.apellido}
+                  onChange={(e) => setEditUserFormData({ ...editUserFormData, apellido: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Correo Electrónico</label>
+                <input
+                  type="email"
+                  className="admin-panel__form-input"
+                  value={editUserFormData.correo}
+                  onChange={(e) => setEditUserFormData({ ...editUserFormData, correo: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Rol</label>
+                <select
+                  className="admin-panel__form-select"
+                  value={editUserFormData.rol}
+                  onChange={(e) => setEditUserFormData({ ...editUserFormData, rol: e.target.value })}
+                  required
+                >
+                  <option value="cliente">Cliente</option>
+                  <option value="team">Team</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </div>
+              <div className="admin-panel__form-actions">
+                <button
+                  type="button"
+                  className="admin-panel__btn admin-panel__btn--secondary"
+                  onClick={() => setShowEditUserModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="admin-panel__btn admin-panel__btn--primary">
+                  Actualizar Usuario
                 </button>
               </div>
             </form>
