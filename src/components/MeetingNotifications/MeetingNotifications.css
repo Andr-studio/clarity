@@ -528,25 +528,49 @@
 
 @media (max-width: 768px) {
   .meeting-notifications {
-    top: 70px;
-    width: 260px;
+    top: 60px;
+    width: 300px;
+    z-index: 100;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
   }
 
+  /* Estado colapsado: solo muestra el botón */
   .meeting-notifications.collapsed {
-    width: 45px;
+    width: 50px;
+  }
+
+  /* Ocultar contenido cuando está colapsado */
+  .meeting-notifications.collapsed .meeting-notifications__content {
+    display: none;
+  }
+
+  .meeting-notifications.collapsed .meeting-notifications__title,
+  .meeting-notifications.collapsed .meeting-notifications__badge {
+    display: none;
+  }
+
+  .meeting-notifications.collapsed .meeting-notifications__header {
+    justify-content: center;
   }
 
   .meeting-notifications__header {
-    padding: 16px;
+    padding: 14px;
   }
 
   .meeting-notifications__content {
     padding: 12px;
   }
 
+  .meeting-notifications__collapse-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+  }
+
   .meeting-modal {
     width: 95%;
     padding: 20px;
+    max-width: 400px;
   }
 
   .meeting-modal__actions {
@@ -559,14 +583,9 @@
 }
 
 @media (max-width: 640px) {
-  /* Colapsar automáticamente en móviles */
-  .meeting-notifications:not(.collapsed) .meeting-notifications__title,
-  .meeting-notifications:not(.collapsed) .meeting-notifications__badge {
-    display: none;
-  }
-
   .meeting-notifications {
-    width: 45px;
+    width: 90%;
+    max-width: 280px;
   }
 
   .meeting-notifications.collapsed {
@@ -575,13 +594,51 @@
 
   .meeting-notifications__header {
     padding: 12px;
-    justify-content: center;
   }
 
   .meeting-notifications__collapse-btn {
     width: 28px;
     height: 28px;
     font-size: 18px;
+  }
+
+  /* Ajustar tamaño de tarjetas en móviles pequeños */
+  .meeting-notification-card {
+    padding: 12px;
+  }
+
+  .meeting-notification-card__title {
+    font-size: 13px;
+  }
+
+  .meeting-notification-card__description {
+    font-size: 12px;
+  }
+
+  .meeting-notification-card__btn {
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+}
+
+/* Backdrop para móviles cuando el panel está expandido */
+.meeting-notifications-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .meeting-notifications-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+    z-index: 99;
+    display: block;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .meeting-notifications-backdrop.hidden {
+    display: none;
   }
 }
 
