@@ -11,6 +11,9 @@ export default function MeetingNotifications({ userId }) {
   const [meetingObservation, setMeetingObservation] = useState("");
   const [meetingAlternativeDate, setMeetingAlternativeDate] = useState("");
 
+  // Detectar si es móvil
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
+
   // Iniciar colapsado en móviles
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return window.innerWidth <= 768;
@@ -21,6 +24,22 @@ export default function MeetingNotifications({ userId }) {
       loadReuniones();
     }
   }, [userId]);
+
+  // Escuchar cambios de tamaño de ventana
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+
+      // En escritorio, siempre expandido
+      if (!mobile) {
+        setIsCollapsed(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const loadReuniones = async () => {
     try {
@@ -139,29 +158,34 @@ export default function MeetingNotifications({ userId }) {
 
   return (
     <>
-      {/* Backdrop para cerrar el panel en móviles */}
-      <div
-        className={`meeting-notifications-backdrop ${isCollapsed ? "hidden" : ""}`}
-        onClick={() => setIsCollapsed(true)}
-      />
+      {/* Backdrop para cerrar el panel en móviles - solo visible en móvil cuando está expandido */}
+      {isMobile && (
+        <div
+          className={`meeting-notifications-backdrop ${isCollapsed ? "hidden" : ""}`}
+          onClick={() => setIsCollapsed(true)}
+        />
+      )}
 
-      <div className={`meeting-notifications ${isCollapsed ? "collapsed" : ""}`}>
+      <div className={`meeting-notifications ${isCollapsed ? "collapsed" : ""} ${isMobile ? "mobile" : ""}`}>
         <div className="meeting-notifications__header">
           <div className="meeting-notifications__header-content">
             <h3 className="meeting-notifications__title">📅 Reuniones</h3>
-            {reunionesPendientes.length > 0 && (
+            {reunionesPendientes.length > 0 && !isCollapsed && (
               <span className="meeting-notifications__badge">
                 {reunionesPendientes.length}
               </span>
             )}
           </div>
-          <button
-            className="meeting-notifications__collapse-btn"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            aria-label={isCollapsed ? "Expandir" : "Colapsar"}
-          >
-            {isCollapsed ? "›" : "‹"}
-          </button>
+          {/* Mostrar botón solo en móvil */}
+          {isMobile && (
+            <button
+              className="meeting-notifications__collapse-btn"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              aria-label={isCollapsed ? "Mostrar reuniones" : "Ocultar reuniones"}
+            >
+              {isCollapsed ? "Mostrar" : "Ocultar"}
+            </button>
+          )}
         </div>
 
         {!isCollapsed && (

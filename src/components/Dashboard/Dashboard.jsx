@@ -406,6 +406,10 @@ export default function Dashboard({ user, onLogout }) {
             userId={user?.id}
             user={user}
           />
+
+          {/* Panel de Notificaciones de Reuniones - Entre ProjectHeader y ProgressSection en móvil */}
+          <MeetingNotifications userId={user?.id} />
+
           <ProgressSection
             progress={currentProject.progress}
             milestones={currentProject.milestones}
@@ -599,9 +603,6 @@ export default function Dashboard({ user, onLogout }) {
           <QuickStats stats={currentProject.quickStats} />
         </div>
       </div>
-
-      {/* Panel de Notificaciones de Reuniones */}
-      <MeetingNotifications userId={user?.id} />
     </div>
   );
 }

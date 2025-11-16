@@ -1,4 +1,4 @@
-/* Meeting Notifications - Panel lateral fijo */
+/* Meeting Notifications - Panel lateral fijo en escritorio */
 .meeting-notifications {
   position: fixed;
   left: 0;
@@ -17,8 +17,14 @@
   overflow: hidden;
 }
 
-.meeting-notifications.collapsed {
-  width: 60px;
+/* En escritorio NO se puede colapsar, así que removemos esta clase para desktop */
+.meeting-notifications.collapsed:not(.mobile) {
+  width: 340px;
+}
+
+/* En móvil SÍ se puede colapsar */
+.meeting-notifications.mobile.collapsed {
+  max-height: 60px;
 }
 
 .meeting-notifications__header {
@@ -71,7 +77,8 @@
   background: rgba(0, 122, 255, 0.1);
   border: 1px solid rgba(0, 122, 255, 0.2);
   border-radius: 8px;
-  width: 32px;
+  padding: 6px 12px;
+  min-width: 70px;
   height: 32px;
   display: flex;
   align-items: center;
@@ -79,8 +86,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--accent-blue-light, #007aff);
-  font-size: 20px;
+  font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .meeting-notifications__collapse-btn:hover {
@@ -527,44 +535,48 @@
 }
 
 @media (max-width: 768px) {
-  .meeting-notifications {
-    top: 60px;
-    width: 300px;
-    z-index: 100;
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  /* En móvil, el panel es relativo y fluye en el documento */
+  .meeting-notifications.mobile {
+    position: relative;
+    left: auto;
+    top: auto;
+    bottom: auto;
+    width: 100%;
+    margin: 1rem 0;
+    border-radius: 12px;
+    border: 1px solid rgba(60, 60, 67, 0.12);
+    border-right: 1px solid rgba(60, 60, 67, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-height: 600px;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Estado colapsado: solo muestra el botón */
-  .meeting-notifications.collapsed {
-    width: 50px;
+  /* Estado colapsado: solo muestra el header */
+  .meeting-notifications.mobile.collapsed {
+    max-height: 60px;
+    overflow: hidden;
   }
 
   /* Ocultar contenido cuando está colapsado */
-  .meeting-notifications.collapsed .meeting-notifications__content {
+  .meeting-notifications.mobile.collapsed .meeting-notifications__content {
     display: none;
-  }
-
-  .meeting-notifications.collapsed .meeting-notifications__title,
-  .meeting-notifications.collapsed .meeting-notifications__badge {
-    display: none;
-  }
-
-  .meeting-notifications.collapsed .meeting-notifications__header {
-    justify-content: center;
   }
 
   .meeting-notifications__header {
-    padding: 14px;
+    padding: 14px 16px;
   }
 
   .meeting-notifications__content {
     padding: 12px;
+    max-height: 500px;
+    overflow-y: auto;
   }
 
   .meeting-notifications__collapse-btn {
-    width: 30px;
+    padding: 6px 12px;
+    min-width: 70px;
     height: 30px;
-    font-size: 18px;
+    font-size: 12px;
   }
 
   .meeting-modal {
@@ -583,13 +595,12 @@
 }
 
 @media (max-width: 640px) {
-  .meeting-notifications {
-    width: 90%;
-    max-width: 280px;
+  .meeting-notifications.mobile {
+    margin: 0.75rem 0;
   }
 
-  .meeting-notifications.collapsed {
-    width: 45px;
+  .meeting-notifications.mobile.collapsed {
+    max-height: 55px;
   }
 
   .meeting-notifications__header {
@@ -597,9 +608,10 @@
   }
 
   .meeting-notifications__collapse-btn {
-    width: 28px;
+    padding: 5px 10px;
+    min-width: 65px;
     height: 28px;
-    font-size: 18px;
+    font-size: 11px;
   }
 
   /* Ajustar tamaño de tarjetas en móviles pequeños */
@@ -621,25 +633,13 @@
   }
 }
 
-/* Backdrop para móviles cuando el panel está expandido */
+/* Backdrop para móviles cuando el panel está expandido - YA NO SE NECESITA */
 .meeting-notifications-backdrop {
   display: none;
 }
 
-@media (max-width: 768px) {
-  .meeting-notifications-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(2px);
-    z-index: 99;
-    display: block;
-    animation: fadeIn 0.2s ease;
-  }
-
-  .meeting-notifications-backdrop.hidden {
-    display: none;
-  }
+.meeting-notifications-backdrop.hidden {
+  display: none;
 }
 
 /* Scroll personalizado */

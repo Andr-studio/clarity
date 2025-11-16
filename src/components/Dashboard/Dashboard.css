@@ -287,6 +287,10 @@
 }
 
 @media (max-width: 1024px) {
+  .dashboard {
+    padding-left: 300px; /* Ajustar para panel más pequeño en tablets (280px + 20px margen) */
+  }
+
   .dashboard__content {
     grid-template-columns: 1fr;
     gap: 24px;
@@ -302,7 +306,7 @@
 
 @media (max-width: 768px) {
   .dashboard {
-    padding-left: 280px; /* Ajustar para panel más pequeño en tablets (260px + 20px) */
+    padding-left: 1rem; /* En móvil el panel fluye en el documento, no necesita espacio fijo */
   }
 
   .dashboard__header-content {
@@ -350,7 +354,7 @@
 
 @media (max-width: 640px) {
   .dashboard {
-    padding-left: 65px; /* Espacio para panel colapsado en móviles (45px + 20px) */
+    padding-left: 1rem; /* En móvil el panel fluye en el documento, no necesita espacio fijo */
   }
 
   .dashboard__header-content {
