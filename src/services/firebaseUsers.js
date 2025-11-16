@@ -11,11 +11,13 @@ import {
   query,
   where,
   updateDoc,
+  deleteDoc,
   serverTimestamp
 } from 'firebase/firestore';
 import {
   createUserWithEmailAndPassword,
-  updateProfile
+  updateProfile,
+  deleteUser
 } from 'firebase/auth';
 import { auth, db } from '../firebase';
 
@@ -146,7 +148,7 @@ const firebaseUsersAPI = {
   update: async (userId, updates) => {
     try {
       await updateDoc(doc(db, 'usuarios', userId), updates);
-      
+
       return {
         success: true,
         message: 'Usuario actualizado exitosamente'
@@ -156,6 +158,29 @@ const firebaseUsersAPI = {
       return {
         success: false,
         message: error.message
+      };
+    }
+  },
+
+  // Eliminar usuario
+  delete: async (userId) => {
+    try {
+      // Eliminar documento de Firestore
+      await deleteDoc(doc(db, 'usuarios', userId));
+
+      // NOTA: Para eliminar del Auth, el usuario debe estar autenticado actualmente
+      // o se debe usar Firebase Admin SDK desde el backend
+      // Por ahora solo eliminamos de Firestore
+
+      return {
+        success: true,
+        message: 'Usuario eliminado exitosamente'
+      };
+    } catch (error) {
+      console.error('Error eliminando usuario:', error);
+      return {
+        success: false,
+        message: error.message || 'Error al eliminar usuario'
       };
     }
   }
