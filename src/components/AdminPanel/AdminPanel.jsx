@@ -17,10 +17,13 @@ import {
   Calendar,
   Upload,
   Eye,
-  Download
+  Download,
+  Target,
+  MessageCircle
 } from "lucide-react";
 import "./AdminPanel.css";
 import API from "../../services/api";
+import CommentModal from "../ProgressSection/CommentModal";
 
 export default function AdminPanel({ user, onLogout }) {
   const [stats, setStats] = useState({
@@ -83,6 +86,15 @@ export default function AdminPanel({ user, onLogout }) {
     fechaSolicitada: "",
     proyectoId: "",
   });
+  // Estados para Hitos y Comentarios
+  const [milestones, setMilestones] = useState([]);
+  const [selectedProjectForMilestones, setSelectedProjectForMilestones] = useState("");
+  const [commentModal, setCommentModal] = useState({
+    isOpen: false,
+    milestoneId: null,
+    milestoneTitle: '',
+    projectId: null
+  });
 
   useEffect(() => {
     loadAdminData();
@@ -105,6 +117,43 @@ export default function AdminPanel({ user, onLogout }) {
         const allMeetings = await API.reuniones.getByAdmin(user.id);
         setReuniones(allMeetings);
       }
+
+      // Cargar todos los hitos de todos los proyectos
+      const allMilestones = [];
+      for (const project of allProjects) {
+        try {
+          const projectMilestones = await API.milestones.getAll(project.id);
+
+          // Cargar contador de comentarios para cada hito
+          const milestonesWithComments = await Promise.all(
+            projectMilestones.map(async (hito) => {
+              try {
+                const comentarios = await API.comentarios.getByHito(project.id, hito.id);
+                return {
+                  ...hito,
+                  proyectoNombre: project.nombre,
+                  proyectoId: project.id,
+                  comentarios_count: comentarios.length,
+                };
+              } catch (error) {
+                console.error(`Error cargando comentarios para hito ${hito.id}:`, error);
+                return {
+                  ...hito,
+                  proyectoNombre: project.nombre,
+                  proyectoId: project.id,
+                  comentarios_count: 0,
+                };
+              }
+            })
+          );
+
+          allMilestones.push(...milestonesWithComments);
+        } catch (error) {
+          console.error(`Error cargando hitos del proyecto ${project.id}:`, error);
+        }
+      }
+
+      setMilestones(allMilestones);
 
       // Calcular estadísticas
       const activeProjects = allProjects.filter(p => p.estado === "en_progreso" || p.estado === "activo");
@@ -549,6 +598,49 @@ export default function AdminPanel({ user, onLogout }) {
     }
   };
 
+  const handleOpenComments = (milestone) => {
+    setCommentModal({
+      isOpen: true,
+      milestoneId: milestone.id,
+      milestoneTitle: milestone.nombre,
+      projectId: milestone.proyectoId
+    });
+  };
+
+  const handleCloseComments = () => {
+    setCommentModal({
+      isOpen: false,
+      milestoneId: null,
+      milestoneTitle: '',
+      projectId: null
+    });
+  };
+
+  const handleCommentAdded = async () => {
+    // Recargar el contador de comentarios del milestone específico
+    if (commentModal.milestoneId && commentModal.projectId) {
+      try {
+        const comments = await API.comentarios.getByHito(commentModal.projectId, commentModal.milestoneId);
+
+        // Actualizar el milestone con el nuevo contador
+        setMilestones(prevMilestones =>
+          prevMilestones.map(m =>
+            m.id === commentModal.milestoneId
+              ? { ...m, comentarios_count: comments.length }
+              : m
+          )
+        );
+      } catch (error) {
+        console.error('Error actualizando contador de comentarios:', error);
+      }
+    }
+  };
+
+  const getFilteredMilestones = () => {
+    if (!selectedProjectForMilestones) return milestones;
+    return milestones.filter(m => m.proyectoId === selectedProjectForMilestones);
+  };
+
   const formatDate = (fecha) => {
     if (!fecha) return "N/A";
 
@@ -705,6 +797,13 @@ export default function AdminPanel({ user, onLogout }) {
         >
           <Calendar size={18} />
           Reuniones
+        </button>
+        <button
+          className={`admin-panel__tab ${activeTab === "hitos" ? "admin-panel__tab--active" : ""}`}
+          onClick={() => setActiveTab("hitos")}
+        >
+          <Target size={18} />
+          Hitos
         </button>
       </div>
 
@@ -1073,6 +1172,130 @@ export default function AdminPanel({ user, onLogout }) {
                             title="Eliminar reunión"
                           >
                             <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "hitos" && (
+          <div className="admin-panel__section">
+            <div className="admin-panel__section-header">
+              <h2 className="admin-panel__section-title">
+                <Target size={20} />
+                Todos los Hitos ({getFilteredMilestones().length})
+              </h2>
+              <div className="admin-panel__filters">
+                <select
+                  className="admin-panel__filter-select"
+                  value={selectedProjectForMilestones}
+                  onChange={(e) => setSelectedProjectForMilestones(e.target.value)}
+                >
+                  <option value="">Todos los proyectos</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="admin-panel__table-container">
+              {getFilteredMilestones().length === 0 ? (
+                <div className="admin-panel__empty-state">
+                  <Target size={48} />
+                  <h3>No hay hitos disponibles</h3>
+                  <p>Los hitos se crean desde los proyectos asignados al equipo.</p>
+                </div>
+              ) : (
+                <table className="admin-panel__table">
+                  <thead>
+                    <tr>
+                      <th>Hito</th>
+                      <th>Proyecto</th>
+                      <th>Estado</th>
+                      <th>Progreso</th>
+                      <th>Responsable</th>
+                      <th>Fecha Límite</th>
+                      <th>Comentarios</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getFilteredMilestones().map((m) => (
+                      <tr key={m.id}>
+                        <td>
+                          <div className="admin-panel__milestone-cell">
+                            <strong>{m.nombre}</strong>
+                            <small>{m.descripcion}</small>
+                          </div>
+                        </td>
+                        <td>{m.proyectoNombre}</td>
+                        <td>
+                          <span className={`admin-panel__status-badge ${getStatusBadgeClass(m.estado)}`}>
+                            {m.estado}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="admin-panel__progress-bar">
+                            <div
+                              className="admin-panel__progress-fill"
+                              style={{ width: `${m.progreso || 0}%` }}
+                            ></div>
+                            <span className="admin-panel__progress-text">{m.progreso || 0}%</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <div style={{
+                              width: "32px",
+                              height: "32px",
+                              borderRadius: "50%",
+                              background: "#3b82f6",
+                              color: "white",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "0.875rem",
+                              fontWeight: "600"
+                            }}>
+                              {m.responsableAvatar || "U"}
+                            </div>
+                            <span>{m.responsableNombre || m.responsable_nombre || "N/A"}</span>
+                          </div>
+                        </td>
+                        <td>{formatDate(m.fechaLimite || m.fecha_limite)}</td>
+                        <td>
+                          <button
+                            className="admin-panel__btn admin-panel__btn--icon"
+                            onClick={() => handleOpenComments(m)}
+                            title="Ver comentarios"
+                            style={{ position: 'relative' }}
+                          >
+                            <MessageCircle size={16} />
+                            {m.comentarios_count > 0 && (
+                              <span style={{
+                                position: 'absolute',
+                                top: '-4px',
+                                right: '-4px',
+                                background: '#ef4444',
+                                color: 'white',
+                                borderRadius: '50%',
+                                width: '16px',
+                                height: '16px',
+                                fontSize: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: '600'
+                              }}>
+                                {m.comentarios_count}
+                              </span>
+                            )}
                           </button>
                         </td>
                       </tr>
@@ -1614,6 +1837,17 @@ export default function AdminPanel({ user, onLogout }) {
           </div>
         </div>
       )}
+
+      {/* Modal de Comentarios */}
+      <CommentModal
+        isOpen={commentModal.isOpen}
+        onClose={handleCloseComments}
+        milestoneId={commentModal.milestoneId}
+        projectId={commentModal.projectId}
+        milestoneTitle={commentModal.milestoneTitle}
+        userId={user?.id}
+        onCommentAdded={handleCommentAdded}
+      />
     </div>
   );
 }

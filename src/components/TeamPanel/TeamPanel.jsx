@@ -16,10 +16,12 @@ import {
   Image,
   Upload,
   Video,
-  Eye
+  Eye,
+  MessageCircle
 } from "lucide-react";
 import "./TeamPanel.css";
 import API from "../../services/api";
+import CommentModal from "../ProgressSection/CommentModal";
 
 export default function TeamPanel({ user, onLogout }) {
   const [stats, setStats] = useState({
@@ -42,6 +44,12 @@ export default function TeamPanel({ user, onLogout }) {
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [multimediaFiles, setMultimediaFiles] = useState([]);
   const [uploadingMultimedia, setUploadingMultimedia] = useState(false);
+  const [commentModal, setCommentModal] = useState({
+    isOpen: false,
+    milestoneId: null,
+    milestoneTitle: '',
+    projectId: null
+  });
   const [milestoneFormData, setMilestoneFormData] = useState({
     nombre: "",
     descripcion: "",
@@ -95,11 +103,31 @@ export default function TeamPanel({ user, onLogout }) {
       for (const project of userProjects) {
         try {
           const projectMilestones = await API.milestones.getAll(project.id);
-          allMilestones.push(...projectMilestones.map(m => ({
-            ...m,
-            proyectoNombre: project.nombre,
-            proyectoId: project.id
-          })));
+
+          // Cargar contador de comentarios para cada hito
+          const milestonesWithComments = await Promise.all(
+            projectMilestones.map(async (hito) => {
+              try {
+                const comentarios = await API.comentarios.getByHito(project.id, hito.id);
+                return {
+                  ...hito,
+                  proyectoNombre: project.nombre,
+                  proyectoId: project.id,
+                  comentarios_count: comentarios.length,
+                };
+              } catch (error) {
+                console.error(`Error cargando comentarios para hito ${hito.id}:`, error);
+                return {
+                  ...hito,
+                  proyectoNombre: project.nombre,
+                  proyectoId: project.id,
+                  comentarios_count: 0,
+                };
+              }
+            })
+          );
+
+          allMilestones.push(...milestonesWithComments);
         } catch (error) {
           console.error(`Error cargando hitos del proyecto ${project.id}:`, error);
         }
@@ -125,6 +153,44 @@ export default function TeamPanel({ user, onLogout }) {
 
   const handleLogout = () => {
     onLogout?.();
+  };
+
+  const handleOpenComments = (milestone) => {
+    setCommentModal({
+      isOpen: true,
+      milestoneId: milestone.id,
+      milestoneTitle: milestone.nombre,
+      projectId: milestone.proyectoId
+    });
+  };
+
+  const handleCloseComments = () => {
+    setCommentModal({
+      isOpen: false,
+      milestoneId: null,
+      milestoneTitle: '',
+      projectId: null
+    });
+  };
+
+  const handleCommentAdded = async () => {
+    // Recargar el contador de comentarios del milestone específico
+    if (commentModal.milestoneId && commentModal.projectId) {
+      try {
+        const comments = await API.comentarios.getByHito(commentModal.projectId, commentModal.milestoneId);
+
+        // Actualizar el milestone con el nuevo contador
+        setMilestones(prevMilestones =>
+          prevMilestones.map(m =>
+            m.id === commentModal.milestoneId
+              ? { ...m, comentarios_count: comments.length }
+              : m
+          )
+        );
+      } catch (error) {
+        console.error('Error actualizando contador de comentarios:', error);
+      }
+    }
   };
 
   const handleCreateMilestone = async (e) => {
@@ -793,6 +859,7 @@ export default function TeamPanel({ user, onLogout }) {
                       <th>Progreso</th>
                       <th>Responsable</th>
                       <th>Fecha Límite</th>
+                      <th>Comentarios</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>
@@ -838,6 +905,34 @@ export default function TeamPanel({ user, onLogout }) {
                           </div>
                         </td>
                         <td>{formatDate(m.fechaLimite || m.fecha_limite)}</td>
+                        <td>
+                          <button
+                            className="team-panel__icon-btn"
+                            onClick={() => handleOpenComments(m)}
+                            title="Ver comentarios"
+                            style={{ position: 'relative' }}
+                          >
+                            <MessageCircle size={16} />
+                            {m.comentarios_count > 0 && (
+                              <span style={{
+                                position: 'absolute',
+                                top: '-4px',
+                                right: '-4px',
+                                background: '#ef4444',
+                                color: 'white',
+                                borderRadius: '50%',
+                                width: '16px',
+                                height: '16px',
+                                fontSize: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
+                                {m.comentarios_count}
+                              </span>
+                            )}
+                          </button>
+                        </td>
                         <td>
                           <div className="team-panel__actions-cell">
                             <button
@@ -1153,6 +1248,17 @@ export default function TeamPanel({ user, onLogout }) {
           </div>
         </div>
       )}
+
+      {/* Modal de Comentarios */}
+      <CommentModal
+        isOpen={commentModal.isOpen}
+        onClose={handleCloseComments}
+        milestoneId={commentModal.milestoneId}
+        projectId={commentModal.projectId}
+        milestoneTitle={commentModal.milestoneTitle}
+        userId={user?.id}
+        onCommentAdded={handleCommentAdded}
+      />
     </div>
   );
 }
