@@ -204,18 +204,25 @@ export const firebaseMeetingsAPI = {
       const q = query(
         reunionesRef,
         where('clienteId', '==', clienteId),
-        where('estado', '==', 'pendiente'),
-        orderBy('fechaSolicitada', 'asc')
+        where('estado', '==', 'pendiente')
       );
 
       const snapshot = await getDocs(q);
 
-      return snapshot.docs.map(doc => ({
+      // Ordenar en el cliente para evitar índices compuestos
+      const reuniones = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         fechaSolicitada: doc.data().fechaSolicitada?.toDate(),
         fechaCreacion: doc.data().fechaCreacion?.toDate()
       }));
+
+      // Ordenar por fecha solicitada (ascendente)
+      return reuniones.sort((a, b) => {
+        const dateA = a.fechaSolicitada || new Date(0);
+        const dateB = b.fechaSolicitada || new Date(0);
+        return dateA - dateB;
+      });
     } catch (error) {
       console.error('Error al obtener reuniones pendientes:', error);
       throw new Error('Error al obtener reuniones pendientes: ' + error.message);
@@ -232,13 +239,13 @@ export const firebaseMeetingsAPI = {
       const reunionesRef = collection(db, 'reuniones');
       const q = query(
         reunionesRef,
-        where('adminId', '==', adminId),
-        orderBy('fechaSolicitada', 'desc')
+        where('adminId', '==', adminId)
       );
 
       const snapshot = await getDocs(q);
 
-      return snapshot.docs.map(doc => ({
+      // Ordenar en el cliente para evitar índices compuestos
+      const reuniones = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         fechaSolicitada: doc.data().fechaSolicitada?.toDate(),
@@ -246,6 +253,13 @@ export const firebaseMeetingsAPI = {
         fechaCreacion: doc.data().fechaCreacion?.toDate(),
         fechaActualizacion: doc.data().fechaActualizacion?.toDate()
       }));
+
+      // Ordenar por fecha solicitada (descendente - más recientes primero)
+      return reuniones.sort((a, b) => {
+        const dateA = a.fechaSolicitada || new Date(0);
+        const dateB = b.fechaSolicitada || new Date(0);
+        return dateB - dateA;
+      });
     } catch (error) {
       console.error('Error al obtener reuniones del admin:', error);
       throw new Error('Error al obtener reuniones del admin: ' + error.message);
