@@ -92,6 +92,10 @@ export const firebaseDocumentationAPI = {
         archivoSize: fileInfo.size,
         archivoTipo: fileInfo.type,
         proyectoId,
+        estado: 'pendiente', // Estado inicial: pendiente
+        motivoRechazo: null,
+        fechaAprobacion: null,
+        fechaRechazo: null,
         fechaCreacion: serverTimestamp(),
         fechaActualizacion: serverTimestamp()
       });
@@ -101,7 +105,8 @@ export const firebaseDocumentationAPI = {
         ...documentoData,
         archivoUrl: fileInfo.url,
         archivoPath: fileInfo.path,
-        archivoNombre: fileInfo.name
+        archivoNombre: fileInfo.name,
+        estado: 'pendiente'
       };
     } catch (error) {
       console.error('Error al crear documento:', error);
@@ -175,6 +180,55 @@ export const firebaseDocumentationAPI = {
     } catch (error) {
       console.error('Error al eliminar documento:', error);
       throw new Error('Error al eliminar el documento: ' + error.message);
+    }
+  },
+
+  /**
+   * Aprueba un documento
+   * @param {string} proyectoId - ID del proyecto
+   * @param {string} documentoId - ID del documento
+   * @returns {Promise<void>}
+   */
+  async approve(proyectoId, documentoId) {
+    try {
+      const docRef = doc(db, `proyectos/${proyectoId}/documentacion`, documentoId);
+      await updateDoc(docRef, {
+        estado: 'aprobado',
+        motivoRechazo: null,
+        fechaAprobacion: serverTimestamp(),
+        fechaRechazo: null,
+        fechaActualizacion: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error al aprobar documento:', error);
+      throw new Error('Error al aprobar el documento: ' + error.message);
+    }
+  },
+
+  /**
+   * Rechaza un documento
+   * @param {string} proyectoId - ID del proyecto
+   * @param {string} documentoId - ID del documento
+   * @param {string} motivoRechazo - Motivo del rechazo
+   * @returns {Promise<void>}
+   */
+  async reject(proyectoId, documentoId, motivoRechazo) {
+    try {
+      if (!motivoRechazo || motivoRechazo.trim() === '') {
+        throw new Error('El motivo de rechazo es requerido');
+      }
+
+      const docRef = doc(db, `proyectos/${proyectoId}/documentacion`, documentoId);
+      await updateDoc(docRef, {
+        estado: 'rechazado',
+        motivoRechazo: motivoRechazo.trim(),
+        fechaRechazo: serverTimestamp(),
+        fechaAprobacion: null,
+        fechaActualizacion: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error al rechazar documento:', error);
+      throw new Error('Error al rechazar el documento: ' + error.message);
     }
   }
 };

@@ -187,7 +187,12 @@ export const estadisticasAPI = USE_FIREBASE ? {
 // =====================================================
 // DOCUMENTACIÓN DE PROYECTOS
 // =====================================================
-export const documentacionAPI = USE_FIREBASE ? firebaseDocumentationAPI : {
+export const documentacionAPI = USE_FIREBASE ? {
+  ...firebaseDocumentationAPI,
+  // Métodos de aprobación/rechazo
+  approve: firebaseDocumentationAPI.approve,
+  reject: firebaseDocumentationAPI.reject
+} : {
   getAll: async (proyectoId) => {
     const response = await fetch(`${PYTHON_API_URL}/proyectos/${proyectoId}/documentacion`);
     return handlePythonResponse(response);
@@ -215,6 +220,24 @@ export const documentacionAPI = USE_FIREBASE ? firebaseDocumentationAPI : {
   delete: async (proyectoId, documentoId) => {
     const response = await fetch(`${PYTHON_API_URL}/proyectos/${proyectoId}/documentacion/${documentoId}`, {
       method: 'DELETE',
+    });
+    return handlePythonResponse(response);
+  },
+
+  approve: async (proyectoId, documentoId) => {
+    const response = await fetch(`${PYTHON_API_URL}/proyectos/${proyectoId}/documentacion/${documentoId}/approve`, {
+      method: 'POST',
+    });
+    return handlePythonResponse(response);
+  },
+
+  reject: async (proyectoId, documentoId, motivoRechazo) => {
+    const response = await fetch(`${PYTHON_API_URL}/proyectos/${proyectoId}/documentacion/${documentoId}/reject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ motivoRechazo }),
     });
     return handlePythonResponse(response);
   }
