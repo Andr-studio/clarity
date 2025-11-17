@@ -18,6 +18,12 @@ export default function Dashboard({ user, onLogout }) {
   const [documentacion, setDocumentacion] = useState([]);
   const [multimediaPorHito, setMultimediaPorHito] = useState({});
 
+  // Estados para aprobación/rechazo de documentos
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [motivoRechazo, setMotivoRechazo] = useState("");
+  const [processingDoc, setProcessingDoc] = useState(null);
+
   // Cargar proyectos al montar el componente
   useEffect(() => {
     if (user?.id && user?.rol) {
@@ -230,6 +236,68 @@ export default function Dashboard({ user, onLogout }) {
     });
   };
 
+  // Funciones de aprobación/rechazo de documentos
+  const handleApproveDoc = async (doc) => {
+    if (!currentProject?.id) return;
+
+    try {
+      setProcessingDoc(doc.id);
+      await API.documentacion.approve(currentProject.id, doc.id);
+
+      // Recargar documentación
+      const docs = await API.documentacion.getAll(currentProject.id);
+      setDocumentacion(docs);
+
+      alert("✅ Documento aprobado exitosamente");
+    } catch (err) {
+      console.error("Error al aprobar documento:", err);
+      alert("❌ Error al aprobar el documento: " + err.message);
+    } finally {
+      setProcessingDoc(null);
+    }
+  };
+
+  const handleRejectDocClick = (doc) => {
+    setSelectedDoc(doc);
+    setMotivoRechazo("");
+    setShowRejectModal(true);
+  };
+
+  const handleRejectDocConfirm = async () => {
+    if (!selectedDoc || !currentProject?.id) return;
+
+    if (!motivoRechazo.trim()) {
+      alert("⚠️ Por favor, indica el motivo del rechazo");
+      return;
+    }
+
+    try {
+      setProcessingDoc(selectedDoc.id);
+      await API.documentacion.reject(currentProject.id, selectedDoc.id, motivoRechazo);
+
+      // Recargar documentación
+      const docs = await API.documentacion.getAll(currentProject.id);
+      setDocumentacion(docs);
+
+      setShowRejectModal(false);
+      setSelectedDoc(null);
+      setMotivoRechazo("");
+
+      alert("✅ Documento rechazado exitosamente");
+    } catch (err) {
+      console.error("Error al rechazar documento:", err);
+      alert("❌ Error al rechazar el documento: " + err.message);
+    } finally {
+      setProcessingDoc(null);
+    }
+  };
+
+  const handleRejectModalClose = () => {
+    setShowRejectModal(false);
+    setSelectedDoc(null);
+    setMotivoRechazo("");
+  };
+
   // Mostrar loading
   if (loading && !currentProject) {
     return (
@@ -426,47 +494,131 @@ export default function Dashboard({ user, onLogout }) {
                 📄 Documentación del Proyecto
               </h2>
               <div style={{ display: "grid", gap: "1rem" }}>
-                {documentacion.map((doc) => (
-                  <div
-                    key={doc.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "1rem",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <h4 style={{ margin: 0, fontWeight: "600", fontSize: "1rem" }}>{doc.titulo}</h4>
-                      <p style={{ margin: "0.25rem 0 0 0", color: "#6b7280", fontSize: "0.875rem" }}>
-                        {doc.descripcion}
-                      </p>
-                      <small style={{ color: "#9ca3af", fontSize: "0.75rem" }}>
-                        📎 {doc.archivoNombre} - Subido el {formatDate(doc.fechaCreacion)}
-                      </small>
-                    </div>
-                    <a
-                      href={doc.archivoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                {documentacion.map((doc) => {
+                  const isProcessing = processingDoc === doc.id;
+                  const isPendiente = !doc.estado || doc.estado === 'pendiente';
+                  const isAprobado = doc.estado === 'aprobado';
+                  const isRechazado = doc.estado === 'rechazado';
+
+                  return (
+                    <div
+                      key={doc.id}
                       style={{
-                        padding: "0.5rem 1rem",
-                        background: "#3b82f6",
-                        color: "white",
-                        borderRadius: "6px",
-                        textDecoration: "none",
-                        fontSize: "0.875rem",
-                        fontWeight: "500",
-                        transition: "background 0.2s",
+                        display: "flex",
+                        flexDirection: "column",
+                        padding: "1rem",
+                        border: `2px solid ${isAprobado ? '#10b981' : isRechazado ? '#ef4444' : '#e5e7eb'}`,
+                        borderRadius: "8px",
+                        background: isAprobado ? '#f0fdf4' : isRechazado ? '#fef2f2' : 'white',
+                        transition: "all 0.2s",
+                        opacity: isProcessing ? 0.6 : 1,
                       }}
                     >
-                      Descargar
-                    </a>
-                  </div>
-                ))}
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                            <h4 style={{ margin: 0, fontWeight: "600", fontSize: "1rem" }}>{doc.titulo}</h4>
+                            {isAprobado && (
+                              <span style={{ padding: "0.25rem 0.5rem", background: "#10b981", color: "white", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "500" }}>
+                                ✓ Aprobado
+                              </span>
+                            )}
+                            {isRechazado && (
+                              <span style={{ padding: "0.25rem 0.5rem", background: "#ef4444", color: "white", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "500" }}>
+                                ✗ Rechazado
+                              </span>
+                            )}
+                            {isPendiente && (
+                              <span style={{ padding: "0.25rem 0.5rem", background: "#f59e0b", color: "white", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "500" }}>
+                                ⏳ Pendiente
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ margin: "0.25rem 0 0 0", color: "#6b7280", fontSize: "0.875rem" }}>
+                            {doc.descripcion}
+                          </p>
+                          <small style={{ color: "#9ca3af", fontSize: "0.75rem" }}>
+                            📎 {doc.archivoNombre} - Subido el {formatDate(doc.fechaCreacion)}
+                          </small>
+                          {isRechazado && doc.motivoRechazo && (
+                            <div style={{ marginTop: "0.5rem", padding: "0.5rem", background: "#fee2e2", borderLeft: "3px solid #ef4444", borderRadius: "4px" }}>
+                              <strong style={{ fontSize: "0.75rem", color: "#991b1b" }}>Motivo del rechazo:</strong>
+                              <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.875rem", color: "#7f1d1d" }}>
+                                {doc.motivoRechazo}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                          <a
+                            href={doc.archivoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: "0.5rem 1rem",
+                              background: "#3b82f6",
+                              color: "white",
+                              borderRadius: "6px",
+                              textDecoration: "none",
+                              fontSize: "0.875rem",
+                              fontWeight: "500",
+                              transition: "background 0.2s",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            📥 Descargar
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Botones de Aprobación/Rechazo (solo si está pendiente) */}
+                      {isPendiente && (
+                        <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e5e7eb" }}>
+                          <button
+                            onClick={() => handleApproveDoc(doc)}
+                            disabled={isProcessing}
+                            style={{
+                              flex: 1,
+                              padding: "0.625rem 1rem",
+                              background: isProcessing ? "#9ca3af" : "#10b981",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              fontSize: "0.875rem",
+                              fontWeight: "500",
+                              cursor: isProcessing ? "not-allowed" : "pointer",
+                              transition: "all 0.2s",
+                            }}
+                            onMouseOver={(e) => !isProcessing && (e.target.style.background = "#059669")}
+                            onMouseOut={(e) => !isProcessing && (e.target.style.background = "#10b981")}
+                          >
+                            {isProcessing ? "Procesando..." : "✓ Aprobar Documento"}
+                          </button>
+                          <button
+                            onClick={() => handleRejectDocClick(doc)}
+                            disabled={isProcessing}
+                            style={{
+                              flex: 1,
+                              padding: "0.625rem 1rem",
+                              background: isProcessing ? "#9ca3af" : "#ef4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              fontSize: "0.875rem",
+                              fontWeight: "500",
+                              cursor: isProcessing ? "not-allowed" : "pointer",
+                              transition: "all 0.2s",
+                            }}
+                            onMouseOver={(e) => !isProcessing && (e.target.style.background = "#dc2626")}
+                            onMouseOut={(e) => !isProcessing && (e.target.style.background = "#ef4444")}
+                          >
+                            {isProcessing ? "Procesando..." : "✗ Rechazar Documento"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -481,6 +633,105 @@ export default function Dashboard({ user, onLogout }) {
           <QuickStats stats={currentProject.quickStats} />
         </div>
       </div>
+
+      {/* Modal de Rechazo de Documento */}
+      {showRejectModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "1rem",
+          }}
+          onClick={handleRejectModalClose}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "1.5rem",
+              maxWidth: "500px",
+              width: "100%",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.25rem", fontWeight: "600", color: "#1f2937" }}>
+              Rechazar Documento
+            </h3>
+            <p style={{ margin: "0 0 1rem 0", color: "#6b7280", fontSize: "0.875rem" }}>
+              Por favor, indica el motivo por el cual rechazas este documento:
+            </p>
+            <div style={{ marginBottom: "1rem" }}>
+              <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: "500", color: "#374151" }}>
+                Documento: <strong>{selectedDoc?.titulo}</strong>
+              </label>
+              <textarea
+                value={motivoRechazo}
+                onChange={(e) => setMotivoRechazo(e.target.value)}
+                placeholder="Escribe aquí el motivo del rechazo..."
+                rows={4}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "6px",
+                  fontSize: "0.875rem",
+                  fontFamily: "inherit",
+                  resize: "vertical",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={handleRejectModalClose}
+                style={{
+                  padding: "0.625rem 1rem",
+                  background: "#e5e7eb",
+                  color: "#374151",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "0.875rem",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                }}
+                onMouseOver={(e) => (e.target.style.background = "#d1d5db")}
+                onMouseOut={(e) => (e.target.style.background = "#e5e7eb")}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleRejectDocConfirm}
+                disabled={!motivoRechazo.trim()}
+                style={{
+                  padding: "0.625rem 1rem",
+                  background: motivoRechazo.trim() ? "#ef4444" : "#9ca3af",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "0.875rem",
+                  fontWeight: "500",
+                  cursor: motivoRechazo.trim() ? "pointer" : "not-allowed",
+                  transition: "background 0.2s",
+                }}
+                onMouseOver={(e) => motivoRechazo.trim() && (e.target.style.background = "#dc2626")}
+                onMouseOut={(e) => motivoRechazo.trim() && (e.target.style.background = "#ef4444")}
+              >
+                Confirmar Rechazo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

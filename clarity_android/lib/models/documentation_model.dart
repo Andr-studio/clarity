@@ -13,6 +13,12 @@ class DocumentationModel {
   final DateTime? fechaCreacion;
   final DateTime? fechaActualizacion;
 
+  // Campos de aprobación/rechazo
+  final String estado; // 'pendiente', 'aprobado', 'rechazado'
+  final String? motivoRechazo;
+  final DateTime? fechaAprobacion;
+  final DateTime? fechaRechazo;
+
   DocumentationModel({
     required this.id,
     required this.titulo,
@@ -25,6 +31,10 @@ class DocumentationModel {
     required this.proyectoId,
     this.fechaCreacion,
     this.fechaActualizacion,
+    this.estado = 'pendiente',
+    this.motivoRechazo,
+    this.fechaAprobacion,
+    this.fechaRechazo,
   });
 
   factory DocumentationModel.fromFirestore(DocumentSnapshot doc) {
@@ -49,6 +59,14 @@ class DocumentationModel {
       fechaActualizacion: data['fechaActualizacion'] != null
           ? (data['fechaActualizacion'] as Timestamp).toDate()
           : null,
+      estado: data['estado'] ?? 'pendiente',
+      motivoRechazo: data['motivoRechazo'],
+      fechaAprobacion: data['fechaAprobacion'] != null
+          ? (data['fechaAprobacion'] as Timestamp).toDate()
+          : null,
+      fechaRechazo: data['fechaRechazo'] != null
+          ? (data['fechaRechazo'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -66,6 +84,14 @@ class DocumentationModel {
           ? Timestamp.fromDate(fechaCreacion!)
           : FieldValue.serverTimestamp(),
       'fechaActualizacion': FieldValue.serverTimestamp(),
+      'estado': estado,
+      'motivoRechazo': motivoRechazo,
+      'fechaAprobacion': fechaAprobacion != null
+          ? Timestamp.fromDate(fechaAprobacion!)
+          : null,
+      'fechaRechazo': fechaRechazo != null
+          ? Timestamp.fromDate(fechaRechazo!)
+          : null,
     };
   }
 
@@ -81,6 +107,10 @@ class DocumentationModel {
     String? proyectoId,
     DateTime? fechaCreacion,
     DateTime? fechaActualizacion,
+    String? estado,
+    String? motivoRechazo,
+    DateTime? fechaAprobacion,
+    DateTime? fechaRechazo,
   }) {
     return DocumentationModel(
       id: id ?? this.id,
@@ -94,6 +124,10 @@ class DocumentationModel {
       proyectoId: proyectoId ?? this.proyectoId,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
+      estado: estado ?? this.estado,
+      motivoRechazo: motivoRechazo ?? this.motivoRechazo,
+      fechaAprobacion: fechaAprobacion ?? this.fechaAprobacion,
+      fechaRechazo: fechaRechazo ?? this.fechaRechazo,
     );
   }
 }
