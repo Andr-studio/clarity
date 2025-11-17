@@ -10,6 +10,9 @@ export default function MeetingNotifications({ userId }) {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [meetingObservation, setMeetingObservation] = useState("");
   const [meetingAlternativeDate, setMeetingAlternativeDate] = useState("");
+  const [documentos, setDocumentos] = useState([]);
+  const [loadingDocumentos, setLoadingDocumentos] = useState(false);
+  const [showAllDocuments, setShowAllDocuments] = useState(false);
 
   // Detectar si es móvil
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
@@ -46,10 +49,49 @@ export default function MeetingNotifications({ userId }) {
       setLoading(true);
       const todasReuniones = await API.reuniones.getByCliente(userId);
       setReuniones(todasReuniones);
+
+      // Cargar documentos de los proyectos asociados
+      await loadDocumentos(todasReuniones);
     } catch (error) {
       console.error("Error cargando reuniones:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDocumentos = async (reuniones) => {
+    try {
+      setLoadingDocumentos(true);
+
+      // Obtener IDs únicos de proyectos
+      const proyectoIds = [...new Set(
+        reuniones
+          .filter(r => r.proyectoId)
+          .map(r => r.proyectoId)
+      )];
+
+      // Cargar documentos para cada proyecto
+      const todosDocumentos = [];
+      for (const proyectoId of proyectoIds) {
+        try {
+          const docs = await API.documentacion.getAll(proyectoId);
+          // Agregar información del proyecto a cada documento
+          const docsConProyecto = docs.map(doc => ({
+            ...doc,
+            proyectoId,
+            proyectoNombre: reuniones.find(r => r.proyectoId === proyectoId)?.proyectoNombre || 'Proyecto'
+          }));
+          todosDocumentos.push(...docsConProyecto);
+        } catch (error) {
+          console.error(`Error cargando documentos del proyecto ${proyectoId}:`, error);
+        }
+      }
+
+      setDocumentos(todosDocumentos);
+    } catch (error) {
+      console.error("Error cargando documentos:", error);
+    } finally {
+      setLoadingDocumentos(false);
     }
   };
 
@@ -140,6 +182,19 @@ export default function MeetingNotifications({ userId }) {
       default:
         return "#6b7280";
     }
+  };
+
+  const getDocumentIcon = (tipo) => {
+    if (!tipo) return "📄";
+
+    if (tipo.startsWith("image/")) return "🖼️";
+    if (tipo.startsWith("video/")) return "🎥";
+    if (tipo.includes("pdf")) return "📕";
+    if (tipo.includes("word") || tipo.includes("document")) return "📘";
+    if (tipo.includes("excel") || tipo.includes("sheet")) return "📗";
+    if (tipo.includes("powerpoint") || tipo.includes("presentation")) return "📙";
+
+    return "📄";
   };
 
   if (loading) {
@@ -302,6 +357,77 @@ export default function MeetingNotifications({ userId }) {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Sección de Documentos */}
+                {documentos.length > 0 && (
+                  <div className="meeting-notifications__section">
+                    <div className="meeting-notifications__section-header">
+                      <h4 className="meeting-notifications__section-title">
+                        📚 Documentos del Proyecto ({documentos.length})
+                      </h4>
+                      {documentos.length > 3 && (
+                        <button
+                          className="meeting-notifications__toggle-btn"
+                          onClick={() => setShowAllDocuments(!showAllDocuments)}
+                        >
+                          {showAllDocuments ? "Ocultar" : "Ver todos"}
+                        </button>
+                      )}
+                    </div>
+
+                    {loadingDocumentos ? (
+                      <div className="meeting-notifications__loading-docs">
+                        <div className="spinner-small"></div>
+                        <p>Cargando documentos...</p>
+                      </div>
+                    ) : (
+                      <>
+                        {(showAllDocuments ? documentos : documentos.slice(0, 3)).map((doc) => (
+                          <div
+                            key={doc.id}
+                            className="meeting-notification-card meeting-notification-card--document"
+                          >
+                            <div className="meeting-notification-card__header">
+                              <span className="meeting-notification-card__icon">
+                                {getDocumentIcon(doc.archivoTipo)}
+                              </span>
+                              <h5 className="meeting-notification-card__title">
+                                {doc.titulo}
+                              </h5>
+                            </div>
+                            {doc.descripcion && (
+                              <p className="meeting-notification-card__description">
+                                {doc.descripcion}
+                              </p>
+                            )}
+                            <div className="meeting-notification-card__meta">
+                              <span className="meeting-notification-card__project">
+                                📁 {doc.proyectoNombre}
+                              </span>
+                              {doc.archivoNombre && (
+                                <span className="meeting-notification-card__file">
+                                  📎 {doc.archivoNombre}
+                                </span>
+                              )}
+                            </div>
+                            {doc.archivoUrl && (
+                              <div className="meeting-notification-card__actions">
+                                <a
+                                  href={doc.archivoUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="meeting-notification-card__btn meeting-notification-card__btn--view"
+                                >
+                                  👁️ Ver documento
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )}
               </>

@@ -143,14 +143,50 @@
   margin-bottom: 0;
 }
 
+.meeting-notifications__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
 .meeting-notifications__section-title {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary-light, #6e6e73);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin: 0 0 12px 0;
+  margin: 0;
   padding-left: 4px;
+}
+
+.meeting-notifications__toggle-btn {
+  background: rgba(0, 122, 255, 0.1);
+  border: 1px solid rgba(0, 122, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-blue-light, #007aff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.meeting-notifications__toggle-btn:hover {
+  background: rgba(0, 122, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.meeting-notifications__loading-docs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 8px;
+  color: var(--text-secondary-light, #6e6e73);
+  font-size: 13px;
 }
 
 /* Meeting Notification Card */
@@ -187,6 +223,11 @@
   border-left: 4px solid #ef4444;
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), white);
   opacity: 0.7;
+}
+
+.meeting-notification-card--document {
+  border-left: 4px solid #8b5cf6;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), white);
 }
 
 .meeting-notification-card__header {
@@ -229,12 +270,21 @@
 }
 
 .meeting-notification-card__date,
-.meeting-notification-card__project {
+.meeting-notification-card__project,
+.meeting-notification-card__file {
   font-size: 12px;
   color: var(--text-secondary-light, #6e6e73);
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.meeting-notification-card__file {
+  word-break: break-all;
+  -webkit-line-clamp: 1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .meeting-notification-card__actions {
@@ -275,6 +325,21 @@
 .meeting-notification-card__btn--reject:hover {
   background: rgba(239, 68, 68, 0.2);
   border-color: rgba(239, 68, 68, 0.3);
+}
+
+.meeting-notification-card__btn--view {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meeting-notification-card__btn--view:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4);
 }
 
 /* Modal */
@@ -455,10 +520,17 @@
     color: var(--accent-blue-dark, #0a84ff);
   }
 
+  .meeting-notifications__toggle-btn {
+    background: rgba(10, 132, 255, 0.15);
+    border-color: rgba(10, 132, 255, 0.3);
+    color: var(--accent-blue-dark, #0a84ff);
+  }
+
   .meeting-notifications__section-title,
   .meeting-notification-card__description,
   .meeting-notification-card__date,
-  .meeting-notification-card__project {
+  .meeting-notification-card__project,
+  .meeting-notification-card__file {
     color: var(--text-secondary-dark, #8e8e93);
   }
 
@@ -477,6 +549,10 @@
 
   .meeting-notification-card--rejected {
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(58, 58, 60, 0.5));
+  }
+
+  .meeting-notification-card--document {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(58, 58, 60, 0.5));
   }
 
   .meeting-notification-card__title {
