@@ -1233,6 +1233,71 @@
   flex-shrink: 0;
 }
 
+/* Document header with title and status badge */
+.admin-panel__document-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Document status variants */
+.admin-panel__document-item--approved {
+  border: 2px solid var(--success-green-light);
+  background: rgba(52, 199, 89, 0.05);
+}
+
+.admin-panel__document-item--rejected {
+  border: 2px solid var(--error-red-light);
+  background: rgba(255, 59, 48, 0.05);
+}
+
+.admin-panel__document-item--pending {
+  border: 2px solid var(--warning-orange-light);
+  background: rgba(255, 149, 0, 0.05);
+}
+
+/* Rejection notice */
+.admin-panel__rejection-notice {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 59, 48, 0.1);
+  border-left: 3px solid var(--error-red-light);
+  border-radius: 6px;
+}
+
+.admin-panel__rejection-notice strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--error-red-light);
+}
+
+.admin-panel__rejection-notice p {
+  margin: 0 !important;
+  font-size: 0.875rem;
+  color: var(--text-primary-light);
+}
+
+.admin-panel__rejection-notice small {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary-light);
+}
+
+/* Approval notice */
+.admin-panel__approval-notice {
+  margin-top: 0.5rem;
+}
+
+.admin-panel__approval-notice small {
+  font-size: 0.75rem;
+  color: var(--success-green-light);
+  font-weight: 500;
+}
+
 /* Dark mode for documents */
 @media (prefers-color-scheme: dark) {
   .admin-panel__document-item {
@@ -1255,6 +1320,38 @@
   .admin-panel__document-info p,
   .admin-panel__document-info small {
     color: var(--text-secondary-dark);
+  }
+
+  .admin-panel__document-item--approved {
+    border: 2px solid var(--success-green-dark);
+    background: rgba(48, 209, 88, 0.1);
+  }
+
+  .admin-panel__document-item--rejected {
+    border: 2px solid var(--error-red-dark);
+    background: rgba(255, 69, 58, 0.1);
+  }
+
+  .admin-panel__document-item--pending {
+    border: 2px solid var(--warning-orange-dark);
+    background: rgba(255, 179, 64, 0.1);
+  }
+
+  .admin-panel__rejection-notice {
+    background: rgba(255, 69, 58, 0.15);
+    border-left-color: var(--error-red-dark);
+  }
+
+  .admin-panel__rejection-notice strong {
+    color: var(--error-red-dark);
+  }
+
+  .admin-panel__rejection-notice p {
+    color: var(--text-primary-dark);
+  }
+
+  .admin-panel__approval-notice small {
+    color: var(--success-green-dark);
   }
 }
 
