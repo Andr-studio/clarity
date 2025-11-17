@@ -163,6 +163,24 @@ export default function AdminPanel({ user, onLogout }) {
 
       setMilestones(allMilestones);
 
+      // Cargar todos los documentos de todos los proyectos
+      const allDocumentation = [];
+      for (const project of allProjects) {
+        try {
+          const projectDocs = await API.documentacion.getAll(project.id);
+          const docsWithProject = projectDocs.map(doc => ({
+            ...doc,
+            proyectoNombre: project.nombre,
+            proyectoId: project.id
+          }));
+          allDocumentation.push(...docsWithProject);
+        } catch (error) {
+          console.error(`Error cargando documentos del proyecto ${project.id}:`, error);
+        }
+      }
+
+      setDocumentacion(allDocumentation);
+
       // Calcular estadísticas
       const activeProjects = allProjects.filter(p => p.estado === "en_progreso" || p.estado === "activo");
       const completedProjects = allProjects.filter(p => p.estado === "completado");
@@ -544,14 +562,39 @@ export default function AdminPanel({ user, onLogout }) {
     }
   };
 
-  const handleDeleteDocumentation = async (docId) => {
+  const handleDeleteDocumentation = async (docId, proyectoId = null) => {
     if (!window.confirm("¿Estás seguro de eliminar este documento?")) {
       return;
     }
 
     try {
-      await API.documentacion.delete(selectedProjectForDoc, docId);
-      await loadDocumentation(selectedProjectForDoc);
+      // Usar el proyectoId proporcionado o el seleccionado del modal
+      const projectId = proyectoId || selectedProjectForDoc;
+
+      await API.documentacion.delete(projectId, docId);
+
+      // Si estamos en el modal, recargar solo esos documentos
+      if (selectedProjectForDoc && !proyectoId) {
+        await loadDocumentation(selectedProjectForDoc);
+      } else {
+        // Si estamos en la vista general, recargar todos los documentos
+        const allDocumentation = [];
+        for (const project of projects) {
+          try {
+            const projectDocs = await API.documentacion.getAll(project.id);
+            const docsWithProject = projectDocs.map(doc => ({
+              ...doc,
+              proyectoNombre: project.nombre,
+              proyectoId: project.id
+            }));
+            allDocumentation.push(...docsWithProject);
+          } catch (error) {
+            console.error(`Error cargando documentos del proyecto ${project.id}:`, error);
+          }
+        }
+        setDocumentacion(allDocumentation);
+      }
+
       alert("Documento eliminado exitosamente");
     } catch (error) {
       console.error("Error eliminando documento:", error);
@@ -1171,17 +1214,51 @@ export default function AdminPanel({ user, onLogout }) {
             <div className="admin-panel__section-header">
               <h2 className="admin-panel__section-title">
                 <FileText size={20} />
-                Gestión de Documentación
+                Todos los Documentos ({documentacion.length})
               </h2>
-              <p style={{ marginTop: "0.5rem", color: "#6b7280" }}>
-                Selecciona un proyecto desde la pestaña "Proyectos" y haz clic en el icono de documentación
-              </p>
             </div>
-            <div className="admin-panel__empty-state" style={{ marginTop: "2rem" }}>
-              <FileText size={48} />
-              <h3>Gestiona la documentación de tus proyectos</h3>
-              <p>Ve a la pestaña de Proyectos y haz clic en el icono de documentación para subir archivos</p>
-            </div>
+            {documentacion.length === 0 ? (
+              <div className="admin-panel__empty-state">
+                <FileText size={48} />
+                <h3>No hay documentos disponibles</h3>
+                <p>Ve a la pestaña de Proyectos y haz clic en el icono de documentación para subir archivos</p>
+              </div>
+            ) : (
+              <div className="admin-panel__documents-list">
+                {documentacion.map((doc) => (
+                  <div key={doc.id} className="admin-panel__document-item">
+                    <div className="admin-panel__document-icon">
+                      <FileText size={24} />
+                    </div>
+                    <div className="admin-panel__document-info">
+                      <h4>{doc.titulo}</h4>
+                      <p>{doc.descripcion}</p>
+                      <small>
+                        Proyecto: {doc.proyectoNombre} • Subido el {formatDate(doc.fechaCreacion)} • {doc.archivoNombre}
+                      </small>
+                    </div>
+                    <div className="admin-panel__document-actions">
+                      <a
+                        href={doc.archivoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="admin-panel__btn admin-panel__btn--icon"
+                        title="Descargar documento"
+                      >
+                        <Download size={16} />
+                      </a>
+                      <button
+                        className="admin-panel__btn admin-panel__btn--icon admin-panel__btn--danger"
+                        onClick={() => handleDeleteDocumentation(doc.id, doc.proyectoId)}
+                        title="Eliminar documento"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
