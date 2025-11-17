@@ -1,0 +1,64 @@
+name: clarity_android
+description: Clarity - Gestión de proyectos y hitos (Android App)
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.16.0
+  cloud_firestore: ^4.14.0
+  firebase_storage: ^11.6.0
+
+  # State Management
+  provider: ^6.1.1
+
+  # UI & Navigation
+  cupertino_icons: ^1.0.2
+  flutter_svg: ^2.0.9
+
+  # Date & Time
+  intl: ^0.18.1
+
+  # Image & Video
+  image_picker: ^1.0.7
+  video_player: ^2.8.2
+  cached_network_image: ^3.3.1
+
+  # File Handling
+  file_picker: ^6.1.1
+  path_provider: ^2.1.2
+  url_launcher: ^6.2.4
+
+  # PDF
+  pdf: ^3.10.7
+  printing: ^5.12.0
+
+  # Utils
+  shared_preferences: ^2.2.2
+  uuid: ^4.3.3
+
+  # Calendar
+  table_calendar: ^3.0.9
+
+  # Charts & Stats
+  fl_chart: ^0.66.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Assets
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
