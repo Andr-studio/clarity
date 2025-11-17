@@ -13,6 +13,9 @@ export default function MeetingNotifications({ userId }) {
   const [documentos, setDocumentos] = useState([]);
   const [loadingDocumentos, setLoadingDocumentos] = useState(false);
   const [showAllDocuments, setShowAllDocuments] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [documentRejectionReason, setDocumentRejectionReason] = useState("");
 
   // Detectar si es móvil
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
@@ -132,6 +135,46 @@ export default function MeetingNotifications({ userId }) {
     } catch (error) {
       console.error("Error rechazando reunión:", error);
       alert(error.message || "Error al rechazar la reunión");
+    }
+  };
+
+  const handleOpenDocumentModal = (document, action) => {
+    setSelectedDocument({ ...document, action });
+    setDocumentRejectionReason("");
+    setShowDocumentModal(true);
+  };
+
+  const handleApproveDocument = async () => {
+    try {
+      await API.documentacion.approve(selectedDocument.proyectoId, selectedDocument.id);
+      await loadReuniones(); // Recargar para actualizar los documentos
+      setShowDocumentModal(false);
+      setSelectedDocument(null);
+    } catch (error) {
+      console.error("Error aprobando documento:", error);
+      alert(error.message || "Error al aprobar el documento");
+    }
+  };
+
+  const handleRejectDocument = async () => {
+    if (!documentRejectionReason.trim()) {
+      alert("Por favor proporciona un motivo para el rechazo");
+      return;
+    }
+
+    try {
+      await API.documentacion.reject(
+        selectedDocument.proyectoId,
+        selectedDocument.id,
+        documentRejectionReason
+      );
+      await loadReuniones(); // Recargar para actualizar los documentos
+      setShowDocumentModal(false);
+      setSelectedDocument(null);
+      setDocumentRejectionReason("");
+    } catch (error) {
+      console.error("Error rechazando documento:", error);
+      alert(error.message || "Error al rechazar el documento");
     }
   };
 
@@ -412,8 +455,8 @@ export default function MeetingNotifications({ userId }) {
                                 </span>
                               )}
                             </div>
-                            {doc.archivoUrl && (
-                              <div className="meeting-notification-card__actions">
+                            <div className="meeting-notification-card__actions">
+                              {doc.archivoUrl && (
                                 <a
                                   href={doc.archivoUrl}
                                   target="_blank"
@@ -422,8 +465,39 @@ export default function MeetingNotifications({ userId }) {
                                 >
                                   👁️ Ver documento
                                 </a>
-                              </div>
-                            )}
+                              )}
+                              {doc.estado === 'pendiente' && (
+                                <>
+                                  <button
+                                    className="meeting-notification-card__btn meeting-notification-card__btn--accept"
+                                    onClick={() => handleOpenDocumentModal(doc, 'approve')}
+                                  >
+                                    ✓ Aprobar
+                                  </button>
+                                  <button
+                                    className="meeting-notification-card__btn meeting-notification-card__btn--reject"
+                                    onClick={() => handleOpenDocumentModal(doc, 'reject')}
+                                  >
+                                    ✗ Rechazar
+                                  </button>
+                                </>
+                              )}
+                              {doc.estado === 'aprobado' && (
+                                <span className="meeting-notification-card__status meeting-notification-card__status--approved">
+                                  ✅ Aprobado
+                                </span>
+                              )}
+                              {doc.estado === 'rechazado' && (
+                                <span className="meeting-notification-card__status meeting-notification-card__status--rejected">
+                                  ❌ Rechazado
+                                  {doc.motivoRechazo && (
+                                    <span className="meeting-notification-card__rejection-reason">
+                                      Motivo: {doc.motivoRechazo}
+                                    </span>
+                                  )}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </>
@@ -500,6 +574,81 @@ export default function MeetingNotifications({ userId }) {
                 Aceptar Reunión
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Gestión de Documentos */}
+      {showDocumentModal && selectedDocument && (
+        <div
+          className="meeting-modal-overlay"
+          onClick={() => setShowDocumentModal(false)}
+        >
+          <div
+            className="meeting-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="meeting-modal__title">
+              📄 {selectedDocument.titulo}
+            </h3>
+            {selectedDocument.descripcion && (
+              <p className="meeting-modal__description">
+                {selectedDocument.descripcion}
+              </p>
+            )}
+            <p className="meeting-modal__date">
+              📁 Proyecto: {selectedDocument.proyectoNombre}
+            </p>
+
+            {selectedDocument.action === 'approve' ? (
+              <>
+                <p className="meeting-modal__confirmation">
+                  ¿Estás seguro de que deseas aprobar este documento?
+                </p>
+                <div className="meeting-modal__actions">
+                  <button
+                    onClick={() => setShowDocumentModal(false)}
+                    className="meeting-modal__btn meeting-modal__btn--cancel"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleApproveDocument}
+                    className="meeting-modal__btn meeting-modal__btn--accept"
+                  >
+                    Aprobar Documento
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="meeting-modal__field">
+                  <label className="meeting-modal__label">
+                    Motivo del rechazo (requerido)
+                  </label>
+                  <textarea
+                    value={documentRejectionReason}
+                    onChange={(e) => setDocumentRejectionReason(e.target.value)}
+                    placeholder="Explica por qué rechazas este documento..."
+                    className="meeting-modal__textarea"
+                  />
+                </div>
+                <div className="meeting-modal__actions">
+                  <button
+                    onClick={() => setShowDocumentModal(false)}
+                    className="meeting-modal__btn meeting-modal__btn--cancel"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleRejectDocument}
+                    className="meeting-modal__btn meeting-modal__btn--reject"
+                  >
+                    Rechazar Documento
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
