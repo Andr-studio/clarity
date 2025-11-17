@@ -1226,65 +1226,58 @@ export default function AdminPanel({ user, onLogout }) {
             ) : (
               <div className="admin-panel__documents-list">
                 {documentacion.map((doc) => {
-                  const isPendiente = !doc.estado || doc.estado === 'pendiente';
-                  const isAprobado = doc.estado === 'aprobado';
-                  const isRechazado = doc.estado === 'rechazado';
+                  const estado = doc.estado || 'pendiente';
+                  const isPendiente = estado === 'pendiente';
+                  const isAprobado = estado === 'aprobado';
+                  const isRechazado = estado === 'rechazado';
 
                   return (
                     <div
                       key={doc.id}
-                      className="admin-panel__document-item"
-                      style={{
-                        border: `2px solid ${isAprobado ? '#10b981' : isRechazado ? '#ef4444' : '#e5e7eb'}`,
-                        background: isAprobado ? '#f0fdf4' : isRechazado ? '#fef2f2' : 'white'
-                      }}
+                      className={`admin-panel__document-item ${
+                        isAprobado ? 'admin-panel__document-item--approved' :
+                        isRechazado ? 'admin-panel__document-item--rejected' :
+                        'admin-panel__document-item--pending'
+                      }`}
                     >
                       <div className="admin-panel__document-icon">
                         <FileText size={24} />
                       </div>
-                      <div className="admin-panel__document-info" style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-                          <h4 style={{ margin: 0 }}>{doc.titulo}</h4>
+                      <div className="admin-panel__document-info">
+                        <div className="admin-panel__document-header">
+                          <h4>{doc.titulo}</h4>
                           {isAprobado && (
-                            <span style={{ padding: "0.25rem 0.5rem", background: "#10b981", color: "white", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "500" }}>
+                            <span className="admin-panel__status-badge admin-panel__status-badge--completed">
                               ✓ Aprobado por Cliente
                             </span>
                           )}
                           {isRechazado && (
-                            <span style={{ padding: "0.25rem 0.5rem", background: "#ef4444", color: "white", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "500" }}>
+                            <span className="admin-panel__status-badge admin-panel__status-badge--pending">
                               ✗ Rechazado por Cliente
                             </span>
                           )}
                           {isPendiente && (
-                            <span style={{ padding: "0.25rem 0.5rem", background: "#f59e0b", color: "white", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "500" }}>
+                            <span className="admin-panel__status-badge admin-panel__status-badge--active">
                               ⏳ Pendiente de Revisión
                             </span>
                           )}
                         </div>
-                        <p style={{ margin: "0.25rem 0" }}>{doc.descripcion}</p>
+                        <p>{doc.descripcion}</p>
                         <small>
                           Proyecto: {doc.proyectoNombre} • Subido el {formatDate(doc.fechaCreacion)} • {doc.archivoNombre}
                         </small>
                         {isRechazado && doc.motivoRechazo && (
-                          <div style={{ marginTop: "0.5rem", padding: "0.75rem", background: "#fee2e2", borderLeft: "3px solid #ef4444", borderRadius: "4px" }}>
-                            <strong style={{ fontSize: "0.875rem", color: "#991b1b", display: "block", marginBottom: "0.25rem" }}>
-                              Motivo del rechazo:
-                            </strong>
-                            <p style={{ margin: 0, fontSize: "0.875rem", color: "#7f1d1d" }}>
-                              {doc.motivoRechazo}
-                            </p>
+                          <div className="admin-panel__rejection-notice">
+                            <strong>Motivo del rechazo:</strong>
+                            <p>{doc.motivoRechazo}</p>
                             {doc.fechaRechazo && (
-                              <small style={{ fontSize: "0.75rem", color: "#991b1b", marginTop: "0.25rem", display: "block" }}>
-                                Rechazado el {formatDate(doc.fechaRechazo)}
-                              </small>
+                              <small>Rechazado el {formatDate(doc.fechaRechazo)}</small>
                             )}
                           </div>
                         )}
                         {isAprobado && doc.fechaAprobacion && (
-                          <div style={{ marginTop: "0.5rem" }}>
-                            <small style={{ fontSize: "0.75rem", color: "#059669" }}>
-                              Aprobado el {formatDate(doc.fechaAprobacion)}
-                            </small>
+                          <div className="admin-panel__approval-notice">
+                            <small>Aprobado el {formatDate(doc.fechaAprobacion)}</small>
                           </div>
                         )}
                       </div>

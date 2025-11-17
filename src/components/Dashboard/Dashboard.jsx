@@ -496,9 +496,11 @@ export default function Dashboard({ user, onLogout }) {
               <div style={{ display: "grid", gap: "1rem" }}>
                 {documentacion.map((doc) => {
                   const isProcessing = processingDoc === doc.id;
-                  const isPendiente = !doc.estado || doc.estado === 'pendiente';
-                  const isAprobado = doc.estado === 'aprobado';
-                  const isRechazado = doc.estado === 'rechazado';
+                  // Si el documento no tiene estado o es pendiente, se considera pendiente
+                  const estado = doc.estado || 'pendiente';
+                  const isPendiente = estado === 'pendiente';
+                  const isAprobado = estado === 'aprobado';
+                  const isRechazado = estado === 'rechazado';
 
                   return (
                     <div
