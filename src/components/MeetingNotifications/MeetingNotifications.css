@@ -342,6 +342,36 @@
   box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4);
 }
 
+.meeting-notification-card__join-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #007aff, #0051d5);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 122, 255, 0.3);
+  width: 100%;
+  text-align: center;
+}
+
+.meeting-notification-card__join-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 122, 255, 0.4);
+  background: linear-gradient(135deg, #0051d5, #003d99);
+}
+
+.meeting-notification-card__platform {
+  font-size: 11px;
+  opacity: 0.9;
+  margin-left: 4px;
+}
+
 /* Document Status */
 .meeting-notification-card__status {
   flex: 1;
@@ -665,6 +695,14 @@
     background: rgba(10, 132, 255, 0.1);
     border-color: rgba(10, 132, 255, 0.2);
     color: var(--text-secondary-dark, #8e8e93);
+  }
+
+  .meeting-notification-card__join-btn {
+    background: linear-gradient(135deg, #0a84ff, #0066cc);
+  }
+
+  .meeting-notification-card__join-btn:hover {
+    background: linear-gradient(135deg, #0066cc, #004999);
   }
 }
 
