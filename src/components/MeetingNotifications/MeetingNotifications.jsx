@@ -369,6 +369,25 @@ export default function MeetingNotifications({ userId }) {
                             📅 {formatDate(reunion.fechaSolicitada)}
                           </span>
                         </div>
+                        {reunion.linkReunion && (
+                          <div className="meeting-notification-card__actions">
+                            <a
+                              href={reunion.linkReunion}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="meeting-notification-card__join-btn"
+                            >
+                              🎥 Unirse a la reunión
+                              {reunion.plataforma && (
+                                <span className="meeting-notification-card__platform">
+                                  ({reunion.plataforma === 'google-meet' ? 'Google Meet' :
+                                    reunion.plataforma === 'microsoft-teams' ? 'Microsoft Teams' :
+                                    reunion.plataforma === 'zoom' ? 'Zoom' : reunion.plataforma})
+                                </span>
+                              )}
+                            </a>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

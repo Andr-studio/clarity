@@ -93,6 +93,8 @@ export default function AdminPanel({ user, onLogout }) {
     descripcion: "",
     fechaSolicitada: "",
     proyectoId: "",
+    plataforma: "",
+    linkReunion: "",
   });
   // Estados para Hitos y Comentarios
   const [milestones, setMilestones] = useState([]);
@@ -628,6 +630,8 @@ export default function AdminPanel({ user, onLogout }) {
         titulo: meetingFormData.titulo,
         descripcion: meetingFormData.descripcion,
         fechaSolicitada: new Date(meetingFormData.fechaSolicitada),
+        plataforma: meetingFormData.plataforma || null,
+        linkReunion: meetingFormData.linkReunion || null,
       });
 
       setReuniones([newMeeting, ...reuniones]);
@@ -638,6 +642,8 @@ export default function AdminPanel({ user, onLogout }) {
         descripcion: "",
         fechaSolicitada: "",
         proyectoId: "",
+        plataforma: "",
+        linkReunion: "",
       });
 
       alert("Reunión solicitada exitosamente. El cliente recibirá una notificación.");
@@ -2110,6 +2116,29 @@ export default function AdminPanel({ user, onLogout }) {
                   value={meetingFormData.fechaSolicitada}
                   onChange={(e) => setMeetingFormData({ ...meetingFormData, fechaSolicitada: e.target.value })}
                   required
+                />
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Plataforma de Reunión</label>
+                <select
+                  className="admin-panel__form-select"
+                  value={meetingFormData.plataforma}
+                  onChange={(e) => setMeetingFormData({ ...meetingFormData, plataforma: e.target.value })}
+                >
+                  <option value="">Seleccionar plataforma</option>
+                  <option value="google-meet">Google Meet</option>
+                  <option value="microsoft-teams">Microsoft Teams</option>
+                  <option value="zoom">Zoom</option>
+                </select>
+              </div>
+              <div className="admin-panel__form-group">
+                <label className="admin-panel__form-label">Link de Reunión</label>
+                <input
+                  type="url"
+                  className="admin-panel__form-input"
+                  value={meetingFormData.linkReunion}
+                  onChange={(e) => setMeetingFormData({ ...meetingFormData, linkReunion: e.target.value })}
+                  placeholder="https://meet.google.com/xxx-yyyy-zzz"
                 />
               </div>
               <div className="admin-panel__form-actions">

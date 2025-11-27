@@ -104,6 +104,8 @@ export const firebaseMeetingsAPI = {
         titulo: reunionData.titulo,
         descripcion: reunionData.descripcion || '',
         fechaSolicitada: reunionData.fechaSolicitada, // Fecha propuesta por el admin
+        plataforma: reunionData.plataforma || null, // 'google-meet', 'microsoft-teams', 'zoom', etc.
+        linkReunion: reunionData.linkReunion || null, // URL de la reunión
         estado: 'pendiente', // 'pendiente', 'aceptada', 'rechazada'
         observacion: null,
         fechaAlternativa: null,
